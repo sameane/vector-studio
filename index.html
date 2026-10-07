@@ -120,16 +120,16 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
 @media (max-width:760px){#toast{bottom:16px}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}#toast.show #toastProgress{animation:none;opacity:.35}}
 
-@media (max-width: 760px){
-  #toolbar{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+@media (max-width: 1239px){
+  #toolbar{height:auto;min-height:3rem;flex-wrap:wrap;align-content:center;overflow:visible;padding-top:4px;padding-bottom:4px}
   #toolbar>.flex-1{display:none}
-  #toolbar .tb{font-size:0;padding:7px}
-  #toolbar .tb svg{margin:0}
-  #toolbar .tb select{font-size:11px}
-  #toolbar .nav-tab-btn{font-size:0;padding:7px}
-  #toolbar .nav-tab-btn::first-letter{font-size:14px}
-  #main{position:relative;flex-direction:column;overflow:hidden}
-  #sidebar{order:1;width:100%;height:44px;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:2px 6px;border-right:0;border-bottom:1px solid #282d3a}
+  #toolbar>div:last-child{min-width:0;max-width:100%;flex-wrap:wrap;justify-content:flex-end}
+  #toolbar .vsep{display:none}
+}
+
+@media (max-width: 760px){
+  #main{position:relative;flex-direction:column;overflow-y:scroll}
+  #sidebar{order:1;width:100%;flex-direction:row;flex-wrap:wrap;overflow-x:unset;overflow-y:unset;padding:2px 6px;border-right:0;border-bottom:1px solid #282d3a}
   #sidebar .tool-btn{width:36px;height:36px;flex:none}
   #sidebar .tool-sep{width:1px;height:24px;margin:0 4px;flex:none}
   #workspace{order:2;min-height:0}
@@ -138,12 +138,16 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
   #hintBar{max-width:calc(100% - 24px);font-size:10px;padding:6px 8px}
   #zoomBar{bottom:8px;left:8px}
 }
-
 @media (max-width: 420px){
-  #toolbar{padding-left:6px;padding-right:6px;gap:0}
+  #sidebar{
+    height:auto;
+    overflow-x:visible;
+    overflow-y:visible;
+    flex-wrap:wrap;
+    flex-direction:row;
+  }
   #toolbar>div:first-child span:not(.font-extrabold){display:none}
   #toolbar>div:first-child .font-extrabold{font-size:0}
-  #toolbar .vsep{margin:0 2px}
   #toolbar .nav-tab-btn{padding:6px 4px}
   #hintBar{display:none}
 }
