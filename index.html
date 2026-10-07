@@ -1,0 +1,3183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vector Studio — محرر SVG احترافي</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        panel: '#14161b',
+        panel2: '#1b1e26',
+        panel3: '#222631',
+        line: '#282d3a',
+        accent: '#4c8dff',
+        accentHov: '#3b7cf0',
+        accent2: '#7dabff',
+        txt: '#e8ebf2',
+        muted: '#8b92a5'
+      },
+      fontFamily: {
+        sans: ['Cairo', 'Tahoma', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Consolas', 'monospace']
+      }
+    }
+  }
+};
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:'Cairo',Tahoma,sans-serif;background:#0d0f13;color:#e8ebf2;overflow:hidden}
+button,input,select,textarea{font-family:inherit}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-thumb{background:#2e3544;border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+#workspace{background-image:radial-gradient(#1f2430 1.2px,transparent 1.2px);background-size:20px 20px;background-color:#0b0d11}
+#viewport{touch-action:none;position:absolute;inset:0;overflow:hidden}
+#world{position:absolute;left:0;top:0;transform-origin:0 0}
+#svgRoot{display:block;overflow:visible}
+#overlay{pointer-events:none}
+
+.checkerboard{
+  background-image:linear-gradient(45deg, #1b2029 25%, transparent 25%),
+                   linear-gradient(-45deg, #1b2029 25%, transparent 25%),
+                   linear-gradient(45deg, transparent 75%, #1b2029 75%),
+                   linear-gradient(-45deg, transparent 75%, #1b2029 75%);
+  background-size:16px 16px;
+  background-position:0 0, 0 8px, 8px -8px, -8px 0px;
+  background-color:#0e1117;
+}
+
+.tb{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:transparent;border:0;color:#c5cbd8;padding:6px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;transition:all .15s}
+.tb:hover{background:#232734;color:#fff}
+.tb:active{transform:scale(.98)}
+.tb:disabled{opacity:.35;pointer-events:none}
+.tb svg{width:15px;height:15px;flex:none}
+.tb-accent{background:#4c8dff;color:#fff}
+.tb-accent:hover{background:#3b7cf0;color:#fff}
+.vsep{width:1px;height:22px;background:#282d3a;margin:0 4px;flex:none}
+
+.nav-tab-btn{padding:5px 11px;font-size:11.5px;font-weight:700;border-radius:6px;transition:all .15s;color:#9299ab;cursor:pointer}
+.nav-tab-btn:hover{color:#fff;background:#262c3b}
+.nav-tab-btn.active{background:#4c8dff;color:#fff;box-shadow:0 0 10px rgba(76,141,255,.35)}
+
+.tool-btn{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#9299ab;cursor:pointer;transition:all .15s;position:relative}
+.tool-btn:hover{background:#222633;color:#fff}
+.tool-btn.active{background:#4c8dff;color:#fff;box-shadow:0 0 14px rgba(76,141,255,.4)}
+.tool-btn svg{width:19px;height:19px}
+.tool-sep{width:26px;height:1px;background:#282d3a;margin:6px auto}
+
+.sec-title{font-size:11px;color:#7dabff;font-weight:700;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.3px}
+.fld{display:block;margin-bottom:9px}
+.fld>span{display:block;font-size:11px;color:#8b92a5;margin-bottom:3px}
+.inp,.num{width:100%;background:#0d0f14;border:1px solid #282e3b;border-radius:7px;color:#e8ebf2;padding:6px 9px;font-size:12px;outline:none;transition:border-color .15s}
+.inp:focus,.num:focus{border-color:#4c8dff}
+.num{direction:ltr;text-align:left}
+.num:disabled{opacity:.35}
+input[type=color].inp{padding:2px;height:32px;cursor:pointer}
+input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
+
+.chk{display:flex;align-items:center;gap:7px;font-size:12px;color:#c5cbd8;cursor:pointer;user-select:none}
+.chk input{accent-color:#4c8dff;width:14px;height:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.btn-s{background:#202531;border:1px solid #2f3647;color:#e8ebf2;border-radius:7px;padding:6px 9px;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-s:hover{background:#2b3243;border-color:#3f495e}
+.btn-s:active{transform:scale(.98)}
+
+.layer-row{display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:12px;color:#c5cbd8;margin-bottom:3px;user-select:none;border:1px solid transparent}
+.layer-row:hover{background:#1d222e;border-color:#2a3142}
+.layer-row.active{background:#253759;color:#fff;border-color:#4c8dff/40}
+.lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbtn{background:none;border:0;color:#7e879b;cursor:pointer;padding:3px 5px;border-radius:5px;display:flex;line-height:1;font-size:12px}
+.lbtn:hover{color:#fff;background:#2d3445}
+
+#textEditor{position:absolute;z-index:40;transform-origin:0 0}
+#textEditor textarea{display:block;background:rgba(13,15,20,.95);border:1.5px solid #4c8dff;border-radius:8px;padding:4px 8px;outline:none;white-space:pre;overflow:hidden;resize:none;line-height:1.25;min-width:140px;box-shadow:0 8px 30px rgba(0,0,0,.65)}
+
+#toast{--toast-accent:#7dabff;position:fixed;bottom:24px;left:50%;z-index:100;display:flex;align-items:center;gap:12px;width:max-content;max-width:min(520px,calc(100vw - 28px));padding:13px 42px 15px 14px;overflow:hidden;border:1px solid color-mix(in srgb,var(--toast-accent) 34%,#363e52);border-radius:14px;background:linear-gradient(135deg,rgba(30,35,47,.97),rgba(17,20,28,.97));color:#e8ebf2;box-shadow:0 14px 42px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.04);backdrop-filter:blur(16px);opacity:0;visibility:hidden;transform:translate(-50%,14px) scale(.98);transition:opacity .22s ease,transform .22s ease,visibility .22s;pointer-events:none}
+#toast[data-type="success"]{--toast-accent:#49d5a0}
+#toast[data-type="warning"]{--toast-accent:#f3b94f}
+#toast[data-type="error"]{--toast-accent:#ff6b78}
+#toast[data-type="info"]{--toast-accent:#7dabff}
+#toast.show{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1);pointer-events:auto}
+#toastIcon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--toast-accent) 14%,transparent);color:var(--toast-accent);font-size:17px;font-weight:800}
+#toastCopy{display:grid;gap:2px;min-width:0}
+#toastTitle{color:var(--toast-accent);font-size:10px;font-weight:800;letter-spacing:.04em}
+#toastMessage{color:#e8ebf2;font-size:12px;font-weight:600;line-height:1.55;overflow-wrap:anywhere}
+#toastClose{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:24px;height:24px;border:0;border-radius:7px;background:transparent;color:#9299ab;font-size:17px;cursor:pointer}
+#toastClose:hover{background:#ffffff12;color:#fff}
+#toastProgress{position:absolute;right:0;bottom:0;left:0;height:2px;background:var(--toast-accent);transform:scaleX(1);transform-origin:right;opacity:.8}
+#toast.show #toastProgress{animation:toast-countdown var(--toast-duration,3600ms) linear forwards}
+@keyframes toast-countdown{to{transform:scaleX(0)}}
+@media (max-width:760px){#toast{bottom:16px}}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}#toast.show #toastProgress{animation:none;opacity:.35}}
+
+@media (max-width: 760px){
+  #toolbar{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+  #toolbar>.flex-1{display:none}
+  #toolbar .tb{font-size:0;padding:7px}
+  #toolbar .tb svg{margin:0}
+  #toolbar .tb select{font-size:11px}
+  #toolbar .nav-tab-btn{font-size:0;padding:7px}
+  #toolbar .nav-tab-btn::first-letter{font-size:14px}
+  #main{position:relative;flex-direction:column;overflow:hidden}
+  #sidebar{order:1;width:100%;height:44px;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:2px 6px;border-right:0;border-bottom:1px solid #282d3a}
+  #sidebar .tool-btn{width:36px;height:36px;flex:none}
+  #sidebar .tool-sep{width:1px;height:24px;margin:0 4px;flex:none}
+  #workspace{order:2;min-height:0}
+  #rightSidebar{position:absolute;z-index:20;top:44px;right:0;bottom:0;width:min(320px,88vw);box-shadow:-12px 0 30px rgba(0,0,0,.4)}
+  #rightSidebar.hidden{display:none}
+  #hintBar{max-width:calc(100% - 24px);font-size:10px;padding:6px 8px}
+  #zoomBar{bottom:8px;left:8px}
+}
+
+@media (max-width: 420px){
+  #toolbar{padding-left:6px;padding-right:6px;gap:0}
+  #toolbar>div:first-child span:not(.font-extrabold){display:none}
+  #toolbar>div:first-child .font-extrabold{font-size:0}
+  #toolbar .vsep{margin:0 2px}
+  #toolbar .nav-tab-btn{padding:6px 4px}
+  #hintBar{display:none}
+}
+</style>
+</head>
+<body class="bg-[#0b0d11] text-txt overflow-hidden select-none">
+<div id="app" class="h-screen flex flex-col">
+
+  <!-- ======= شريط الأدوات العلوي ======= -->
+  <header id="toolbar" dir="ltr" class="h-12 shrink-0 bg-panel border-b border-line flex items-center px-3 gap-1">
+    <div class="flex items-center gap-2 px-1 select-none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.3l7.1-.7z" fill="#4c8dff"/></svg>
+      <span class="font-extrabold text-sm tracking-wide text-white">Vector Studio</span>
+      <span class="text-[10px] bg-accent/20 text-accent2 px-1.5 py-0.5 rounded font-bold">PRO</span>
+    </div>
+    <div class="vsep"></div>
+    <button id="btnNew" class="tb" title="لوحة جديدة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>جديد</button>
+    <button id="btnOpen" class="tb" title="فتح ملف SVG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>فتح</button>
+    <button id="btnSave" class="tb" title="حفظ بصيغة SVG (Ctrl+S)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>حفظ SVG</button>
+    <button id="btnPng" class="tb" title="تصدير PNG عالي الدقة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M21 15l-4.5-4.5L7 20"/></svg>PNG</button>
+    <label class="tb border border-line" title="صيغة التصدير للتطبيق الأب"><select id="parentExportFormat" aria-label="صيغة التصدير للتطبيق الأب" class="bg-transparent text-inherit outline-none cursor-pointer"><option value="svg">SVG</option><option value="png">PNG</option></select></label>
+    <button id="btnParentExport" class="tb tb-accent" title="إرسال التصميم إلى التطبيق الأب وإغلاق المحرر بعد الاستلام"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V3"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>تصدير</button>
+    <button id="btnCopy" class="tb" title="نسخ شفرة SVG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>نسخ الكود</button>
+    <div class="vsep"></div>
+    <button id="btnUndo" class="tb" title="تراجع (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg></button>
+    <button id="btnRedo" class="tb" title="إعادة (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></svg></button>
+    <button id="btnClear" class="tb" title="مسح كل العناصر"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>مسح</button>
+    <div class="vsep"></div>
+
+    <!-- أزرار إدراج الصورة والتحويل -->
+    <button id="btnInsertImg" class="tb border border-line hover:border-accent" title="إدراج صورة عادية (PNG/JPG) بدون تحويل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>إدراج صورة</button>
+    <button id="btnTrace" class="tb tb-accent open-trace" title="تحويل صورة PNG/JPG إلى مسارات فيكتور"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L14.5 9.5"/><path d="M13 3l.9 2.1L16 6l-2.1.9L13 9l-.9-2.1L10 6l2.1-.9z"/><path d="M19 10l.6 1.4L21 12l-1.4.6L19 14l-.6-1.4L17 12l1.4-.6z"/></svg>تحويل لفيكتور (Trace)</button>
+
+    <!-- زر Info لمعلومات التواصل مع التطبيقات الخارجية postMessage -->
+    <button id="btnInfo" class="tb text-accent2 border border-accent/30 hover:bg-accent/15" title="معلومات الدمج والتكامل الخارجي عبر postMessage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> </button>
+
+    <div class="flex-1"></div>
+
+    <!-- أزرار التبويبات العلوية الحصرية -->
+    <div class="flex items-center gap-1 bg-panel2 rounded-lg p-0.5 border border-line">
+      <button id="btnNavProps" class="nav-tab-btn active" title="عرض الخصائص">⚙️ الخصائص</button>
+      <button id="btnNavLayers" class="nav-tab-btn" title="عرض الطبقات">📁 الطبقات</button>
+      <button id="btnNavCode" class="nav-tab-btn" title="عرض محرر الكود">💻 كود SVG</button>
+      <div class="vsep my-1"></div>
+      <button id="btnToggleSide" class="tb py-1 px-2 text-muted hover:text-white" title="إظهار / إخفاء القائمة الجانبية"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg></button>
+    </div>
+  </header>
+
+  <!-- ======= مساحة العمل المركزية والقائمة اليمنى ======= -->
+  <div id="main" dir="ltr" class="flex-1 flex min-h-0">
+
+    <!-- الشريط الجانبي الأيسر: الأدوات -->
+    <aside id="sidebar" class="w-14 shrink-0 bg-panel border-r border-line flex flex-col items-center py-2 gap-1">
+      <button class="tool-btn active" data-tool="select" title="تحديد ونقل العناصر (V)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3l7.5 17 2.2-7.3L21 10.5z"/></svg></button>
+      <button class="tool-btn" data-tool="direct" title="أداة التحرير المباشر والمقابض (A) — انقر على المسار لإضافة نقطة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18C6 11.5 11 6.5 18 6.5"/><rect x="2.5" y="15.5" width="5" height="5" rx="1"/><rect x="16" y="3.5" width="5" height="5" rx="1"/></svg></button>
+      <button class="tool-btn" data-tool="hand" title="تحريك لوحة الرسم (H / Space)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.3l-3.3-3.3a2 2 0 0 1 2.8-2.8L7 15"/></svg></button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn" data-tool="pen" title="قلم المسارات والمنحنيات (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
+      <button class="tool-btn" data-tool="rect" title="مستطيل (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></button>
+      <button class="tool-btn" data-tool="ellipse" title="شكل بيضاوي / دائرة (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="8.5" ry="6.5"/></svg></button>
+      <button class="tool-btn" data-tool="line" title="خط مستقيم (L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19L19 5"/></svg></button>
+      <button class="tool-btn" data-tool="text" title="أداة النص عربي / إنجليزي (T)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7V5h14v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg></button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn open-trace" title="تحويل صورة عادية إلى مسارات فيكتور"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M21 15l-4.5-4.5L7 20"/></svg></button>
+    </aside>
+
+    <!-- مساحة الرسم Canvas -->
+    <section id="workspace" class="flex-1 relative min-w-0">
+      <div id="viewport">
+        <div id="world">
+          <svg id="svgRoot" width="800" height="600" viewBox="0 0 800 600">
+            <rect id="artboardBg" x="0" y="0" width="800" height="600" fill="#ffffff" stroke="#2b3140" stroke-width="1" style="filter:drop-shadow(0 10px 40px rgba(0,0,0,.6))"></rect>
+            <g id="artwork"></g>
+            <g id="overlay"></g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- تحكم التكبير واللوحة -->
+      <div id="zoomBar" dir="ltr" class="absolute bottom-3 left-3 z-10 flex items-center gap-1 bg-panel/95 border border-line rounded-lg px-2 py-1 shadow-2xl text-xs">
+        <button id="zoomOut" class="tb" title="تصغير">−</button>
+        <span id="zoomLabel" class="w-12 text-center text-slate-300 font-bold">100%</span>
+        <button id="zoomIn" class="tb" title="تكبير">+</button>
+        <div class="vsep"></div>
+        <button id="zoomFit" class="tb" title="ملاءمة الشاشة (Ctrl+0)">ملء</button>
+        <button id="zoom100" class="tb" title="100%">100%</button>
+      </div>
+
+      <!-- شريط الإرشادات التفاعلي -->
+      <div id="hintBar" dir="rtl" class="absolute bottom-3 right-3 z-10 bg-panel/95 border border-line rounded-xl px-3.5 py-2 text-xs text-slate-200 pointer-events-none max-w-[55%] shadow-2xl backdrop-blur-md leading-relaxed border-l-4 border-l-accent"></div>
+    </section>
+
+    <!-- ======= الشريط الجانبي الأيمن الموحد ======= -->
+    <aside id="rightSidebar" dir="rtl" class="w-80 shrink-0 bg-panel border-l border-line flex flex-col min-h-0 text-xs">
+
+      <!-- 1. لوحة الخصائص -->
+      <div id="panelProps" class="flex-1 overflow-y-auto p-3">
+        <!-- عندما لا يكون أي عنصر محدد (خصائص الـ Artboard) -->
+        <div id="propEmpty">
+          <div class="sec-title" style="margin-top:0">📄 لوحة الرسم (Artboard)</div>
+          <div class="row2">
+            <label class="fld"><span>العرض (W)</span><input id="artW" class="num" type="number" value="800" min="50"></label>
+            <label class="fld"><span>الارتفاع (H)</span><input id="artH" class="num" type="number" value="600" min="50"></label>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <input id="artBgColor" type="color" class="inp" style="width:44px" value="#ffffff" title="لون خلفية اللوحة">
+            <label class="chk" style="margin:0"><input id="artBgTrans" type="checkbox"> خلفية شفافة</label>
+          </div>
+
+          <div class="sec-title">🎨 النمط الافتراضي للرسم</div>
+          <div class="flex items-center gap-2 mb-2">
+            <input id="defFill" type="color" class="inp" style="width:44px" value="#4c8dff">
+            <label class="chk" style="margin:0"><input id="defFillNone" type="checkbox"> بدون تعبئة</label>
+          </div>
+          <div class="flex items-center gap-2 mb-2">
+            <input id="defStroke" type="color" class="inp" style="width:44px" value="#141a24">
+            <label class="chk" style="margin:0"><input id="defStrokeNone" type="checkbox" checked> بدون حدود</label>
+          </div>
+          <label class="fld"><span>عرض الحدود الافتراضي</span><input id="defStrokeW" class="num" type="number" min="0" step="0.5" value="2"></label>
+          <label class="fld"><span>الشفافية</span><input id="defOpacity" type="range" min="0" max="1" step="0.05" value="1"></label>
+
+          <div class="sec-title">🔤 الخط الافتراضي للنصوص</div>
+          <label class="fld"><span>حجم الخط</span><input id="defFontSize" class="num" type="number" min="8" value="36"></label>
+          <label class="fld"><span>نوع الخط</span>
+            <select id="defFontFamily" class="inp">
+              <option value="'Cairo', sans-serif">Cairo (عربي/إنجليزي)</option>
+              <option value="Tahoma, sans-serif">Tahoma</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="'Times New Roman', serif">Times New Roman</option>
+              <option value="'Courier New', monospace">Courier New</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- عند تحديد عنصر ما -->
+        <div id="propElement" class="hidden">
+          <div class="flex items-center justify-between mb-2">
+            <span id="propType" class="font-bold text-sm text-accent2"></span>
+            <div class="flex gap-1">
+              <button id="btnFwd" class="btn-s" title="تقديم طبقة للأمام">↑</button>
+              <button id="btnBwd" class="btn-s" title="تأخير طبقة للخلف">↓</button>
+              <button id="btnDup" class="btn-s" title="تكرار العنصر (Duplicate)">⧉</button>
+              <button id="btnDel" class="btn-s" style="color:#f87171" title="حذف (Delete)">✕</button>
+            </div>
+          </div>
+
+          <!-- أدوات مخصصة للصور النقطية: Crop & Remove Background -->
+          <div id="imageActionsSec" class="hidden mb-3 p-2 bg-panel2 rounded-xl border border-line flex flex-col gap-1.5">
+            <span class="block text-[11px] text-slate-300 font-bold mb-0.5">🛠️ أدوات تعديل الصورة:</span>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button id="btnCropImg" class="btn-s flex items-center justify-center gap-1 text-accent2 border-accent/40 hover:bg-accent/15" title="قص جزء محدد من الصورة">
+                ✂️ قص (Crop)
+              </button>
+              <button id="btnRemoveBg" class="btn-s flex items-center justify-center gap-1 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/15" title="إزالة خلفية الصورة وجعلها شفافة">
+                🪄 حذف الخلفية
+              </button>
+            </div>
+          </div>
+
+          <div id="ungroupSec" class="hidden mb-2">
+            <button id="btnUngroup" class="btn-s w-full text-accent2 border-accent/40 hover:bg-accent/10">🧩 فك التجميع (Ungroup إلى مسارات فردية)</button>
+          </div>
+          <div id="convertPathSec" class="hidden mb-2">
+            <button id="btnConvertToPath" class="btn-s w-full text-accent2 border-accent/40 hover:bg-accent/10">📈 تحويل لشكل حر (مسار قابل للتحرير)</button>
+          </div>
+
+          <div class="sec-title">📐 الموضع والأبعاد</div>
+          <div class="row2">
+            <label class="fld"><span>X</span><input id="propX" class="num" type="number"></label>
+            <label class="fld"><span>Y</span><input id="propY" class="num" type="number"></label>
+            <label class="fld"><span>العرض (W)</span><input id="propW" class="num" type="number" min="0"></label>
+            <label class="fld"><span>الارتفاع (H)</span><input id="propH" class="num" type="number" min="0"></label>
+          </div>
+
+          <div id="colorPropsSec">
+            <div class="sec-title">🖌️ التعبئة (Fill)</div>
+            <div class="flex items-center gap-2 mb-2">
+              <input id="propFill" type="color" class="inp" style="width:44px">
+              <label class="chk" style="margin:0"><input id="propFillNone" type="checkbox"> بدون</label>
+            </div>
+            <label class="fld"><span>شفافية التعبئة</span><input id="propFillOp" type="range" min="0" max="1" step="0.05" value="1"></label>
+
+            <div class="sec-title">✒️ الحدود (Stroke)</div>
+            <div class="flex items-center gap-2 mb-2">
+              <input id="propStroke" type="color" class="inp" style="width:44px">
+              <label class="chk" style="margin:0"><input id="propStrokeNone" type="checkbox"> بدون</label>
+            </div>
+            <label class="fld"><span>عرض الحد</span><input id="propStrokeW" class="num" type="number" min="0" step="0.5"></label>
+            <label class="fld"><span>شفافية الحد</span><input id="propStrokeOp" type="range" min="0" max="1" step="0.05" value="1"></label>
+          </div>
+
+          <div class="sec-title">👻 الشفافية العامة</div>
+          <label class="fld"><input id="propOpacity" type="range" min="0" max="1" step="0.05" value="1"></label>
+
+          <!-- خصائص النصوص -->
+          <div id="propTextSec" class="hidden">
+            <div class="sec-title">🔤 محتوى النص وخياراته</div>
+            <textarea id="propTextContent" class="inp mb-2" rows="2" style="resize:vertical"></textarea>
+            <div class="row2">
+              <label class="fld"><span>حجم الخط</span><input id="propFontSize" class="num" type="number" min="6"></label>
+              <label class="fld"><span>سمك الخط</span>
+                <select id="propFontWeight" class="inp"><option value="400">عادي</option><option value="600">متوسط</option><option value="700">عريض</option><option value="800">عريض جداً</option></select>
+              </label>
+            </div>
+            <label class="fld"><span>نوع الخط</span>
+              <select id="propFontFamily" class="inp">
+                <option value="'Cairo', sans-serif">Cairo</option>
+                <option value="Tahoma, sans-serif">Tahoma</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="'Courier New', monospace">Courier New</option>
+              </select>
+            </label>
+            <div class="row2">
+              <label class="fld"><span>المحاذاة</span>
+                <select id="propAnchor" class="inp"><option value="start">يمين / بداية</option><option value="middle">وسط</option><option value="end">يسار / نهاية</option></select>
+              </label>
+              <label class="fld"><span>الاتجاه</span>
+                <select id="propDir" class="inp"><option value="rtl">RTL (عربي)</option><option value="ltr">LTR (إنجليزي)</option></select>
+              </label>
+            </div>
+          </div>
+
+          <!-- خصائص المسارات والمقابض -->
+          <div id="propPathSec" class="hidden">
+            <div class="sec-title">📈 تحرير النقاط ومقابض بيزيه</div>
+            <p class="text-[11px] text-slate-400 leading-relaxed mb-2">
+              • انقر على أي جزء من المسار لإضافة نقطة جديدة.<br>
+              • اسحب المقابض الدائرية ● لضبط الانحناء (اضغط Alt لكسر الزاوية).<br>
+              • اضغط Delete أو كليك يمين لحذف النقطة المحددة.
+            </p>
+            <div class="flex items-center justify-between py-1 border-y border-line my-2">
+              <span>عدد النقاط (Anchors):</span>
+              <b id="anchorCount" class="text-accent2 text-sm">0</b>
+            </div>
+            <div id="anchorPointControls" class="hidden my-2 p-2 bg-panel2 rounded-lg border border-line">
+              <span class="block text-[11px] text-slate-300 font-bold mb-1.5">تحويل النقطة المحددة:</span>
+              <div class="grid grid-cols-2 gap-1 mb-1.5">
+                <button id="btnMakeSmooth" class="btn-s" title="تحويل لمنحنى ناعم مع مقابض بيزيه">〰️ ناعم (Smooth)</button>
+                <button id="btnMakeCorner" class="btn-s" title="تحويل لزاوية حادة بدون مقابض">📐 زاوية (Corner)</button>
+              </div>
+              <button id="btnDelAnchor" class="btn-s w-full text-red-400 hover:border-red-400/40">🗑️ حذف النقطة المحددة (Delete)</button>
+            </div>
+            <div class="mt-2">
+              <button id="btnToggleClose" class="btn-s w-full">🔒 إغلاق / فتح المسار</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. لوحة الطبقات -->
+      <div id="panelLayers" class="hidden flex-1 flex flex-col min-h-0 p-3">
+        <div class="flex items-center justify-between mb-2 pb-2 border-b border-line shrink-0">
+          <span class="font-bold text-slate-300 text-xs">📁 ترتيب الطبقات والعناصر</span>
+          <span class="text-[10.5px] text-muted">اسحب للترتيب</span>
+        </div>
+        <div id="layersList" class="flex-1 overflow-y-auto pr-0.5"></div>
+      </div>
+
+      <!-- 3. لوحة محرر الكود المباشر -->
+      <div id="panelCode" class="hidden flex-1 flex flex-col min-h-0 p-3">
+        <div class="flex items-center justify-between mb-2 pb-2 border-b border-line shrink-0">
+          <span class="font-bold text-slate-300 text-xs">💻 محرر SVG المباشر</span>
+          <button id="btnApplyCode" class="tb text-accent2 py-1 px-2.5 text-xs bg-accent/10 border border-accent/30 hover:bg-accent/20" title="تطبيق الكود على اللوحة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>تطبيق التعديلات
+          </button>
+        </div>
+        <textarea id="codeEditor" dir="ltr" class="flex-1 w-full bg-[#090b0e] text-emerald-400 font-mono text-xs p-3 rounded-lg border border-line resize-none outline-none select-text leading-relaxed focus:border-accent" spellcheck="false" placeholder="<svg>...</svg>"></textarea>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<!-- ======= نافذة قص الصورة (Crop Modal) ======= -->
+<div id="cropModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+  <div dir="rtl" class="w-[620px] max-w-[95vw] bg-panel border border-line rounded-2xl shadow-2xl p-5 flex flex-col max-h-[92vh]">
+    <div class="flex items-center justify-between mb-3 border-b border-line pb-2">
+      <h2 class="font-bold text-base flex items-center gap-2"><span>✂️</span> قص الصورة (Crop Tool)</h2>
+      <button id="cropClose" class="tb">✕</button>
+    </div>
+    <div class="flex items-center gap-3 mb-3 text-xs">
+      <span class="text-slate-300 font-semibold">نسبة القص:</span>
+      <button class="crop-ratio-btn btn-s active" data-ratio="free">حر (Free)</button>
+      <button class="crop-ratio-btn btn-s" data-ratio="1:1">1:1 (مربع)</button>
+      <button class="crop-ratio-btn btn-s" data-ratio="4:3">4:3</button>
+      <button class="crop-ratio-btn btn-s" data-ratio="16:9">16:9 (عريض)</button>
+    </div>
+    <div class="flex-1 min-h-[280px] max-h-[50vh] relative overflow-hidden rounded-xl border border-line flex items-center justify-center bg-[#090b0e]">
+      <canvas id="cropCanvas" class="max-w-full max-h-full block cursor-crosshair"></canvas>
+    </div>
+    <p class="text-[11.5px] text-slate-400 mt-2 leading-relaxed">• انقر واسحب فوق الصورة لتحديد المستطيل المراد قصه.</p>
+    <div class="flex gap-2 mt-4">
+      <button id="cropApply" class="tb tb-accent flex-1 py-2 text-xs">✅ تطبيق القص وحفظ الصورة</button>
+      <button id="cropCancel" class="tb bg-panel2 flex-none px-4 py-2 text-xs">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= نافذة إزالة الخلفية (Remove Background Modal) ======= -->
+<div id="removeBgModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+  <div dir="rtl" class="w-[680px] max-w-[96vw] bg-panel border border-line rounded-2xl shadow-2xl p-5 flex flex-col max-h-[92vh]">
+    <div class="flex items-center justify-between mb-2 border-b border-line pb-2">
+      <h2 class="font-bold text-base flex items-center gap-2"><span>🪄</span> إزالة خلفية الصورة (Background Removal)</h2>
+      <button id="removeBgClose" class="tb">✕</button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3 text-xs">
+      <label class="fld m-0">
+        <span>نمط المعالجة:</span>
+        <select id="bgRemoveMode" class="inp">
+          <option value="flood">تعبئة من الأطراف (Flood Fill)</option>
+          <option value="chroma">إزالة اللون أينما وجد (Chroma Key)</option>
+        </select>
+      </label>
+      <label class="fld m-0">
+        <span>حساسية اللون (Tolerance): <b id="bgTolVal" class="text-accent2">32</b></span>
+        <input id="bgTolerance" type="range" min="3" max="95" value="32">
+      </label>
+      <label class="fld m-0">
+        <span>تنعيم الحواف (Feather): <b id="bgFeatherVal" class="text-accent2">2px</b></span>
+        <input id="bgFeather" type="range" min="0" max="6" value="2">
+      </label>
+    </div>
+    <div class="flex items-center gap-2 mb-2 text-xs">
+      <span class="text-slate-300 font-semibold">لون الخلفية المستهدف:</span>
+      <input type="color" id="bgTargetColor" class="inp" style="width:40px;height:28px" value="#ffffff">
+      <button id="bgPickEye" class="btn-s flex items-center gap-1 text-accent2">💧 التقاط اللون من الصورة</button>
+      <span id="bgPickHint" class="text-slate-400 text-[11px] hidden">👈 انقر على اللون المراد إزالته في الصورة</span>
+    </div>
+    <div class="flex-1 min-h-[260px] max-h-[48vh] relative overflow-hidden rounded-xl border border-line flex items-center justify-center checkerboard">
+      <canvas id="removeBgCanvas" class="max-w-full max-h-full block"></canvas>
+    </div>
+    <div class="flex gap-2 mt-4">
+      <button id="removeBgApply" class="tb tb-accent flex-1 py-2 text-xs">✨ اعتماد وتطبيق الصورة المفرغة</button>
+      <button id="removeBgCancel" class="tb bg-panel2 flex-none px-4 py-2 text-xs">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= نافذة الدليل والتكامل البرمجي (Info / API Modal) ======= -->
+<div id="infoModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+  <div dir="rtl" class="w-[780px] max-w-[96vw] bg-panel border border-line rounded-2xl shadow-2xl p-6 flex flex-col max-h-[90vh]">
+    <div class="flex items-center justify-between mb-3 border-b border-line pb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🔌</span>
+        <h2 class="font-bold text-lg text-white">دليل دمج Vector Studio مع التطبيقات الخارجية (postMessage API)</h2>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="btnCopyAllInfo" class="tb text-xs py-1 px-2.5 bg-accent/20 text-accent2 hover:bg-accent hover:text-white" title="نسخ جميع تعليمات ومعلومات نافذة الدليل">📋 نسخ كل المعلومات</button>
+        <button id="infoClose" class="tb" title="إغلاق الدليل">✕</button>
+      </div>
+    </div>
+
+    <div id="infoContent" class="flex-1 overflow-y-auto space-y-4 text-xs leading-relaxed pr-1">
+      <p class="text-slate-300">
+        يمكنك تضمين محرر <b>Vector Studio</b> بسهولة داخل أي تطبيق ويب (React, Vue, Angular, Laravel, PHP, WordPress) عبر وسم <code>&lt;iframe&gt;</code>، وتبادل الصور وبيانات الـ SVG والتصدير الحي بكل سلاسة عبر بروتوكول <code>window.postMessage</code> ثنائي الاتجاه.
+      </p>
+
+      <div class="bg-panel2 p-3.5 rounded-xl border border-line space-y-2">
+        <h3 class="font-bold text-accent2 text-sm">1️⃣ إرسال البيانات من تطبيقك إلى Vector Studio (الأوامر الواردة):</h3>
+        <p class="text-slate-400">أرسل رسالة إلى الـ iframe عبر <code>iframe.contentWindow.postMessage(message, targetOrigin)</code>. استخدم أصل التطبيق الفعلي بدلاً من <code>*</code> متى أمكن:</p>
+        <ul class="list-disc list-inside space-y-1.5 text-slate-300 font-mono text-[11px]">
+          <li><b>IMPORT_IMAGE:</b> لإدراج صورة عادية (Base64 أو URL):<br>
+            <code class="text-emerald-400 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'IMPORT_IMAGE', data: { url: 'https://example.com/logo.png' } }</code>
+          </li>
+          <li><b>IMPORT_SVG:</b> لاستبدال مساحة العمل بكود SVG متجهي كامل:<br>
+            <code class="text-emerald-400 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'IMPORT_SVG', data: { svgString: '&lt;svg&gt;...&lt;/svg&gt;' } }</code>
+          </li>
+          <li><b>REQUEST_EXPORT:</b> لطلب تصدير التصميم الحالي وإعادته لتطبيقك. <code>format</code> هي <code>png</code> أو <code>svg</code>؛ <code>scale</code> يحدد دقة PNG (من 1 إلى 4)، و<code>closeOnExport</code> اختياري لإرسال طلب إغلاق بعد نتيجة التصدير:<br>
+            <code class="text-emerald-400 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'REQUEST_EXPORT', data: { format: 'png', scale: 2, closeOnExport: true } }</code>
+          </li>
+          <li><b>SET_ARTBOARD:</b> لتعديل قياسات اللوحة ولونها برمجياً:<br>
+            <code class="text-emerald-400 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'SET_ARTBOARD', data: { width: 1200, height: 630, background: '#ffffff' } }</code>
+          </li>
+          <li><b>CLEAR_CANVAS:</b> لمسح جميع العناصر من اللوحة:<br>
+            <code class="text-emerald-400 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'CLEAR_CANVAS' }</code>
+          </li>
+        </ul>
+      </div>
+
+      <div class="bg-panel2 p-3.5 rounded-xl border border-line space-y-2">
+        <h3 class="font-bold text-emerald-400 text-sm">2️⃣ استقبال النتائج في تطبيقك (الأحداث الصادرة):</h3>
+        <p class="text-slate-400">استمع للأحداث الصادرة من الاستوديو عبر <code>window.addEventListener('message', callback)</code>. كل رسالة تحتوي <code>type</code> و<code>payload</code> و<code>timestamp</code>؛ افحص <code>event.source</code> و<code>event.origin</code> قبل الوثوق بالمرسل.</p>
+        <ul class="list-disc list-inside space-y-1.5 text-slate-300 font-mono text-[11px]">
+          <li><b>VECTOR_STUDIO_READY:</b> يُرسل تلقائياً فور اكتمال تحميل المحرر لتبدأ بإرسال البيانات.</li>
+          <li><b>VECTOR_STUDIO_EXPORT_RESULT:</b> نتيجة التصدير. يحوي <code>payload.format</code> وقياسات الصورة؛ ويحتوي <code>payload.svgString</code> لصيغة SVG أو <code>payload.dataUrl</code> لصيغة PNG:<br>
+            <code class="text-amber-300 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'VECTOR_STUDIO_EXPORT_RESULT', payload: { format: 'png', dataUrl: 'data:image/png;base64,...', width: 1600, height: 1200 } }</code>
+          </li>
+          <li><b>VECTOR_STUDIO_CLOSE:</b> يصدر بعد نتيجة التصدير عند استخدام زر «إلى التطبيق الأب» أو إرسال <code>closeOnExport: true</code>. على التطبيق الأب إخفاء/إزالة الـ iframe؛ لا يستطيع iframe إغلاق الصفحة الحاضنة.</li>
+          <li><b>VECTOR_STUDIO_EXPORT_ERROR:</b> فشل التصدير؛ يحوي <code>payload.format</code> و<code>payload.message</code>.</li>
+          <li><b>VECTOR_STUDIO_CHANGE:</b> تعديل في اللوحة؛ يحوي <code>payload.layerCount</code>.</li>
+        </ul>
+      </div>
+
+      <div class="bg-panel2 p-3.5 rounded-xl border border-line space-y-2">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-accent2 text-sm">3️⃣ نموذج كود جاهز للتطبيق الأب (Parent App Integration Code):</h3>
+          <button id="btnCopyIntegration" class="tb text-xs py-1 px-2.5 bg-accent/20 text-accent2 hover:bg-accent hover:text-white">📋 نسخ المثال</button>
+        </div>
+        <pre dir="ltr" id="integrationCodeBlock" class="p-3 bg-black/60 text-slate-200 font-mono text-[11px] rounded-lg overflow-x-auto select-text leading-relaxed">
+// 1. تضمين المحرر
+const iframe = document.querySelector('#vectorStudioIframe');
+const targetOrigin = 'https://your-site.com';
+
+// 2. استقبال النتائج والأحداث من المحرر
+window.addEventListener('message', (event) => {
+  if (event.source !== iframe.contentWindow) return;
+  if (event.origin !== targetOrigin) return;
+  const { type, payload } = event.data || {};
+
+  if (type === 'VECTOR_STUDIO_READY') {
+    // أصبح المحرر جاهزاً؛ مثال إرسال صورة إلى اللوحة
+    iframe.contentWindow.postMessage({
+      type: 'IMPORT_IMAGE',
+      data: { url: 'https://your-site.com/avatar.png' }
+    }, targetOrigin);
+  }
+
+  if (type === 'VECTOR_STUDIO_EXPORT_RESULT') {
+    // PNG: payload.dataUrl — SVG: payload.svgString
+    console.log('تم استلام:', payload.format, payload);
+  }
+
+  if (type === 'VECTOR_STUDIO_CLOSE') {
+    iframe.hidden = true; // أو أغلق النافذة/أزل الـ iframe
+  }
+
+  if (type === 'VECTOR_STUDIO_EXPORT_ERROR') {
+    console.error('فشل التصدير:', payload.message);
+  }
+});
+
+// 3. طلب PNG ثم إغلاق واجهة المحرر بعد إرسال النتيجة
+function exportPngAndCloseStudio() {
+  iframe.contentWindow.postMessage({
+    type: 'REQUEST_EXPORT',
+    data: { format: 'png', scale: 2, closeOnExport: true }
+  }, targetOrigin);
+}
+</pre>
+      </div>
+    </div>
+
+    <div class="mt-4 pt-3 border-t border-line flex justify-end">
+      <div class="flex items-center gap-2">
+        <button id="btnCopyAllInfoBottom" class="tb px-4 py-2 text-xs">📋 نسخ كل المعلومات</button>
+        <button id="infoCloseBottom" class="tb tb-accent px-6 py-2 text-xs">إغلاق الدليل</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= نافذة تحويل الصورة (Trace Image Modal) ======= -->
+<div id="traceModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/75 backdrop-blur-sm">
+  <div dir="rtl" class="w-[480px] max-w-[94vw] bg-panel border border-line rounded-2xl shadow-2xl p-5">
+    <div class="flex items-center justify-between mb-3 border-b border-line pb-2">
+      <h2 class="font-bold text-base flex items-center gap-2"><span>🖼️</span> إدراج أو تحويل صورة (Image & Trace)</h2>
+      <button id="traceClose" class="tb">✕</button>
+    </div>
+    <p class="text-xs text-slate-400 mb-3 leading-relaxed">اختر صورة (PNG / JPG). يمكنك إدراجها مباشرة باللوحة، أو تحويلها برمجياً إلى مسارات فيكتور SVG قابلة للتلوين والتعديل.</p>
+    <label class="block border-2 border-dashed border-[#2f3544] hover:border-accent rounded-xl p-5 text-center cursor-pointer transition">
+      <input type="file" id="traceFile" accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden">
+      <div class="text-3xl mb-1">📤</div>
+      <div class="text-xs font-semibold text-slate-300" id="traceFileLabel">انقر هنا لاختيار صورة من جهازك</div>
+    </label>
+    <img id="tracePreview" class="hidden mt-3 mx-auto max-h-36 rounded-lg border border-line object-contain">
+    <div class="mt-4 space-y-3">
+      <label class="fld"><span>🎨 عدد الألوان الأساسية: <b id="colorsVal" class="text-accent2">5</b></span><input id="traceColors" type="range" min="2" max="16" value="5"></label>
+      <label class="fld"><span>🔍 نعومة وتبسيط الخطوط (Simplify): <b id="detailVal" class="text-accent2">1.2</b></span><input id="traceDetail" type="range" min="0.4" max="3" step="0.1" value="1.2"></label>
+      <label class="chk"><input id="traceIgnoreWhite" type="checkbox" checked> تجاهل الخلفية البيضاء / الفاتحة (تفريغ تلقائي)</label>
+    </div>
+    <div id="traceProgress" class="hidden mt-3 text-xs text-accent2 flex items-center gap-2 font-semibold">
+      <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+      جاري تتبع المنحنيات وبناء مسارات الـ SVG...
+    </div>
+    <div class="flex flex-col sm:flex-row gap-2 mt-5">
+      <button id="traceRun" class="tb tb-accent flex-1 py-2 text-xs">✨ تحويل إلى فيكتور</button>
+      <button id="traceAsRegularImg" class="tb bg-panel2 border border-line hover:border-slate-400 flex-1 py-2 text-xs">🖼️ إدراج كصورة عادية (بدون فكتور)</button>
+      <button id="traceCancel" class="tb bg-panel2 flex-none px-3 py-2 text-xs">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" dir="rtl" role="status" aria-live="polite" aria-atomic="true" data-type="info">
+  <span id="toastIcon" aria-hidden="true">i</span>
+  <span id="toastCopy">
+    <span id="toastTitle">إشعار</span>
+    <span id="toastMessage"></span>
+  </span>
+  <button id="toastClose" type="button" aria-label="إغلاق الإشعار">×</button>
+  <span id="toastProgress" aria-hidden="true"></span>
+</div>
+<input type="file" id="fileOpen" accept=".svg,image/svg+xml" class="hidden">
+<input type="file" id="fileInsertImgDirect" accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden">
+
+<script>
+'use strict';
+/* ================= Vector Studio — محرك المتجهات الاحترافي ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const SVGNS = 'http://www.w3.org/2000/svg';
+const fmt = n => Math.round(n * 100) / 100;
+const dist = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
+
+let ART_W = 800, ART_H = 600;
+
+function el(t, a) {
+  const n = document.createElementNS(SVGNS, t);
+  if (a) for (const k in a) n.setAttribute(k, a[k]);
+  return n;
+}
+
+const viewport = $('#viewport'), world = $('#world'), svgRoot = $('#svgRoot'),
+      artboardBg = $('#artboardBg'), artwork = $('#artwork'), overlay = $('#overlay');
+
+const state = {
+  tool: 'select', zoom: 1, panX: 0, panY: 0,
+  fill: '#4c8dff', stroke: '#141a24', strokeWidth: 2, opacity: 1,
+  fillNone: false, strokeNone: true,
+  fontSize: 36, fontFamily: "'Cairo', sans-serif", fontWeight: '400',
+  textAnchor: 'start', textDir: 'rtl', space: false
+};
+
+let selected = null, editing = null;
+let penPts = [], penTmp = null, penActive = false;
+let drag = null, dragging = false, suppress = false, textEditor = null, dragLayerElm = null;
+
+/* إرشادات تفاعلية واضحة */
+const HINTS = {
+  select: '🖱️ <b>أداة التحديد:</b> انقر لاختيار أي عنصر • اسحب لتحريكه • اسحب مقابض الزوايا لتغيير حجمه • اضغط <b>Delete</b> لحذفه • استخدم <b>Ctrl + عجلة الماوس</b> للتكبير والتصغير.',
+  direct: '✏️ <b>التحرير المباشر (A):</b> انقر على أي مسار لتحديده • <b>انقر على خط المسار لإضافة نقطة جديدة</b> • اسحب المربعات لتغيير الشكل • <b>اسحب الدوائر لضبط الانحناء</b> (اضغط Alt لكسر الزاوية).',
+  hand: '✋ <b>تحريك اللوحة:</b> انقر واسحب للتجول في مساحة العمل • <b>نصيحة سريعة:</b> يمكنك الضغط مطولاً على زر المسافة (Space) أثناء استخدام أي أداة لتحريك اللوحة فوراً.',
+  pen: '✒️ <b>أداة القلم (P):</b> انقر لوضع نقاط بزوايا حادة، أو <b>انقر واسحب الماوس</b> لإنشاء منحنيات ناعمة • انقر على نقطة البداية لإغلاق الشكل • اضغط <b>Enter</b> للإنهاء.',
+  rect: '⬜ <b>رسم مستطيل:</b> اسحب مؤشر الماوس على اللوحة لرسم المستطيل • تحكّم بلون التعبئة ولون الحدود وحجمه بدقة من قائمة الخصائص على اليمين.',
+  ellipse: '⭕ <b>رسم دائرة أو بيضاوي:</b> اسحب مؤشر الماوس للرسم • اضغط على "تحويل لشكل حر" من قائمة الخصائص لتتمكن من تعديل نقاطه بحرية.',
+  line: '📏 <b>رسم خط مستقيم:</b> انقر واسحب بين نقطتين لرسم خط مستقيم • اضبط سمك الخط ولونه من الخصائص.',
+  text: '🔤 <b>أداة النصوص:</b> انقر في أي مكان لكتابة نص عربي أو إنجليزي • انقر نقراً مزدوجاً على أي نص لتعديله مباشرة.'
+};
+
+/* ---------- إشعارات Toast ---------- */
+let toastT = null;
+const toastEl = $('#toast');
+$('#toastClose').addEventListener('click', () => {
+  clearTimeout(toastT);
+  toastEl.classList.remove('show');
+});
+function toast(msg) {
+  clearTimeout(toastT);
+  const text = String(msg);
+  const type = /❌|فشل|تعذر|خطأ/.test(text) ? 'error'
+    : /⚠️|⚠|تحذير/.test(text) ? 'warning'
+    : /✅|تم بنجاح|تم حفظ|تم تصدير|تم نسخ|تم إرسال/.test(text) ? 'success'
+    : 'info';
+  const variants = {
+    success: { icon: '✓', title: 'تم بنجاح' },
+    warning: { icon: '!', title: 'تنبيه' },
+    error: { icon: '×', title: 'تعذر إكمال العملية' },
+    info: { icon: 'i', title: 'إشعار' }
+  };
+  const duration = clamp(2600 + text.length * 24, 3200, 5600);
+  toastEl.dataset.type = type;
+  toastEl.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  toastEl.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+  $('#toastIcon').textContent = variants[type].icon;
+  $('#toastTitle').textContent = variants[type].title;
+  $('#toastMessage').textContent = text;
+  toastEl.style.setProperty('--toast-duration', `${duration}ms`);
+  toastEl.classList.remove('show');
+  void toastEl.offsetWidth;
+  toastEl.classList.add('show');
+  toastT = setTimeout(() => toastEl.classList.remove('show'), duration);
+}
+
+/* ================= نظام التواصل الخارجي (window.postMessage API) ================= */
+function notifyParent(type, payload = {}) {
+  const msg = { type, payload, timestamp: Date.now() };
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage(msg, '*');
+  }
+  if (window.opener) {
+    window.opener.postMessage(msg, '*');
+  }
+}
+
+async function sendExportToParent(format, scale = 2, closeAfterExport = false) {
+  if (format !== 'svg' && format !== 'png') {
+    throw new Error('صيغة التصدير غير مدعومة');
+  }
+  const payload = format === 'svg'
+    ? { format, svgString: getSVGCode(), width: ART_W, height: ART_H }
+    : { format, dataUrl: await getPNGDataURL(scale), width: ART_W * scale, height: ART_H * scale };
+  notifyParent('VECTOR_STUDIO_EXPORT_RESULT', payload);
+  if (closeAfterExport) {
+    notifyParent('VECTOR_STUDIO_CLOSE', { reason: 'export-complete', format });
+  }
+}
+
+window.addEventListener('message', async (event) => {
+  let msg = event.data;
+  if (typeof msg === 'string') {
+    try { msg = JSON.parse(msg); } catch (e) { return; }
+  }
+  if (!msg || typeof msg !== 'object') return;
+
+  const { type, data } = msg;
+
+  switch (type) {
+    case 'IMPORT_IMAGE':
+    case 'VECTOR_STUDIO_IMPORT_IMAGE': {
+      const src = data?.urlOrBase64 || data?.url || data?.image;
+      if (src) insertRasterImageFromUrl(src);
+      break;
+    }
+
+    case 'IMPORT_SVG':
+    case 'VECTOR_STUDIO_IMPORT_SVG': {
+      const str = data?.svgString || data?.svg;
+      if (str) {
+        const doc = new DOMParser().parseFromString(str, 'image/svg+xml');
+        const s = doc.querySelector('svg');
+        if (s && !doc.querySelector('parsererror')) {
+          replaceArtworkFromSVG(s);
+          toast('📥 تم استيراد كود SVG من التطبيق الخارجي');
+        }
+      }
+      break;
+    }
+
+    case 'REQUEST_EXPORT':
+    case 'VECTOR_STUDIO_REQUEST_EXPORT': {
+      const format = (data?.format || 'png').toLowerCase();
+      try {
+        const scale = clamp(Number(data?.scale) || 2, 1, 4);
+        await sendExportToParent(format, scale, data?.closeOnExport === true);
+        toast('📤 تم إرسال نتيجة التصدير للتطبيق الأب');
+      } catch (err) {
+        console.error('Vector Studio parent export failed:', err);
+        notifyParent('VECTOR_STUDIO_EXPORT_ERROR', { format, message: err.message });
+        toast('❌ تعذر تصدير التصميم إلى التطبيق الأب');
+      }
+      break;
+    }
+
+    case 'SET_ARTBOARD': {
+      if (data?.width) ART_W = Math.max(50, +data.width);
+      if (data?.height) ART_H = Math.max(50, +data.height);
+      $('#artW').value = ART_W; $('#artH').value = ART_H;
+      svgRoot.setAttribute('width', ART_W); svgRoot.setAttribute('height', ART_H);
+      svgRoot.setAttribute('viewBox', `0 0 ${ART_W} ${ART_H}`);
+      artboardBg.setAttribute('width', ART_W); artboardBg.setAttribute('height', ART_H);
+      if (data?.background) artboardBg.setAttribute('fill', data.background);
+      fitView(); scheduleCodeUpdate();
+      break;
+    }
+
+    case 'CLEAR_CANVAS': {
+      clearAll(true);
+      break;
+    }
+  }
+});
+
+// إشعار التطبيق الأب باكتمال الجاهزية
+window.addEventListener('load', () => {
+  notifyParent('VECTOR_STUDIO_READY', { version: '2.5', artboard: { width: ART_W, height: ART_H } });
+});
+
+/* نافذة الدليل والتكامل Info Modal */
+$('#btnInfo').onclick = () => $('#infoModal').classList.remove('hidden');
+$('#infoClose').onclick = () => $('#infoModal').classList.add('hidden');
+$('#infoCloseBottom').onclick = () => $('#infoModal').classList.add('hidden');
+async function copyInfoText(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    throw new Error('Clipboard API unavailable');
+  } catch (err) {
+    const field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.appendChild(field);
+    field.select();
+    const copied = document.execCommand('copy');
+    field.remove();
+    if (!copied) throw new Error('Copy command failed', { cause: err });
+  }
+}
+
+$('#btnCopyIntegration').onclick = async () => {
+  try {
+    await copyInfoText($('#integrationCodeBlock').textContent.trim());
+    toast('📋 تم نسخ مثال التكامل البرمجي');
+  } catch (err) {
+    console.error('Copy integration example failed:', err);
+    toast('❌ تعذر النسخ إلى الحافظة');
+  }
+};
+
+async function copyAllInfo() {
+  const content = $('#infoContent').cloneNode(true);
+  content.querySelectorAll('button').forEach(button => button.remove());
+  try {
+    await copyInfoText(content.innerText.trim());
+    toast('📋 تم نسخ جميع معلومات الدليل');
+  } catch (err) {
+    console.error('Copy info guide failed:', err);
+    toast('❌ تعذر نسخ معلومات الدليل');
+  }
+}
+$('#btnCopyAllInfo').onclick = copyAllInfo;
+$('#btnCopyAllInfoBottom').onclick = copyAllInfo;
+
+/* ---------- التبديل بين اللوحات بالزر العلوي فقط ---------- */
+const btnNavProps = $('#btnNavProps'), btnNavLayers = $('#btnNavLayers'), btnNavCode = $('#btnNavCode');
+const panelProps = $('#panelProps'), panelLayers = $('#panelLayers'), panelCode = $('#panelCode');
+const rightSidebar = $('#rightSidebar');
+if (window.matchMedia('(max-width: 760px)').matches) rightSidebar.classList.add('hidden');
+
+function switchRightTab(tab) {
+  panelProps.classList.toggle('hidden', tab !== 'props');
+  panelLayers.classList.toggle('hidden', tab !== 'layers');
+  panelCode.classList.toggle('hidden', tab !== 'code');
+
+  btnNavProps.classList.toggle('active', tab === 'props');
+  btnNavLayers.classList.toggle('active', tab === 'layers');
+  btnNavCode.classList.toggle('active', tab === 'code');
+
+  rightSidebar.classList.remove('hidden');
+
+  if (tab === 'code') updateCodeNow();
+  if (tab === 'layers') renderLayers();
+}
+
+btnNavProps.onclick = () => switchRightTab('props');
+btnNavLayers.onclick = () => switchRightTab('layers');
+btnNavCode.onclick = () => switchRightTab('code');
+$('#btnToggleSide').onclick = () => rightSidebar.classList.toggle('hidden');
+
+/* ---------- العرض (Zoom & Pan) ---------- */
+function applyView() {
+  world.style.transform = `translate(${state.panX}px,${state.panY}px) scale(${state.zoom})`;
+  $('#zoomLabel').textContent = Math.round(state.zoom * 100) + '%';
+  renderOverlay();
+}
+function screenToWorld(e) {
+  const r = viewport.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left - state.panX) / state.zoom,
+    y: (e.clientY - r.top - state.panY) / state.zoom
+  };
+}
+function worldToScreen(p) {
+  const r = viewport.getBoundingClientRect();
+  return {
+    x: p.x * state.zoom + state.panX + r.left,
+    y: p.y * state.zoom + state.panY + r.top
+  };
+}
+function zoomAt(cx, cy, factor) {
+  const r = viewport.getBoundingClientRect(), px = cx - r.left, py = cy - r.top;
+  const nz = clamp(state.zoom * factor, 0.05, 50), k = nz / state.zoom;
+  state.panX = px - (px - state.panX) * k;
+  state.panY = py - (py - state.panY) * k;
+  state.zoom = nz;
+  applyView();
+}
+function setZoomCenter(nz) {
+  const r = viewport.getBoundingClientRect();
+  zoomAt(r.left + r.width / 2, r.top + r.height / 2, nz / state.zoom);
+}
+function fitView() {
+  const r = viewport.getBoundingClientRect();
+  const z = clamp(Math.min((r.width - 100) / ART_W, (r.height - 100) / ART_H), 0.05, 5);
+  state.zoom = z;
+  state.panX = (r.width - ART_W * z) / 2;
+  state.panY = (r.height - ART_H * z) / 2;
+  applyView();
+}
+const CURSORS = {
+  select: 'default', direct: 'default', hand: 'grab',
+  pen: 'crosshair', rect: 'crosshair', ellipse: 'crosshair',
+  line: 'crosshair', text: 'text'
+};
+function setToolCursor() {
+  viewport.style.cursor = state.space ? 'grab' : (CURSORS[state.tool] || 'default');
+}
+
+/* ---------- التحديد وصندوق الإحاطة ---------- */
+function isPath(e) { return e && e.tagName && e.tagName.toLowerCase() === 'path'; }
+
+function targetElement(node, forDirect) {
+  if (!node || node === artwork || node === svgRoot || node === artboardBg) return null;
+  if (forDirect) {
+    let n = node;
+    while (n && n !== artwork) {
+      if (isPath(n)) return n;
+      n = n.parentElement;
+    }
+  }
+  let n = node;
+  while (n && n.parentElement && n.parentElement !== artwork) n = n.parentElement;
+  return (n && n.parentElement === artwork) ? n : null;
+}
+
+function getElemBBox(el) {
+  const r = el.getBoundingClientRect();
+  const w = world.getBoundingClientRect();
+  return {
+    x: (r.left - w.left) / state.zoom,
+    y: (r.top - w.top) / state.zoom,
+    w: r.width / state.zoom,
+    h: r.height / state.zoom
+  };
+}
+
+function moveElement(elm, dx, dy) {
+  if (!dx && !dy) return;
+  const tag = elm.tagName.toLowerCase();
+  if (tag === 'rect' || tag === 'image') {
+    elm.setAttribute('x', fmt((+elm.getAttribute('x') || 0) + dx));
+    elm.setAttribute('y', fmt((+elm.getAttribute('y') || 0) + dy));
+  } else if (tag === 'ellipse') {
+    elm.setAttribute('cx', fmt((+elm.getAttribute('cx') || 0) + dx));
+    elm.setAttribute('cy', fmt((+elm.getAttribute('cy') || 0) + dy));
+  } else if (tag === 'line') {
+    elm.setAttribute('x1', fmt((+elm.getAttribute('x1') || 0) + dx));
+    elm.setAttribute('y1', fmt((+elm.getAttribute('y1') || 0) + dy));
+    elm.setAttribute('x2', fmt((+elm.getAttribute('x2') || 0) + dx));
+    elm.setAttribute('y2', fmt((+elm.getAttribute('y2') || 0) + dy));
+  } else if (tag === 'text') {
+    elm.setAttribute('x', fmt((+elm.getAttribute('x') || 0) + dx));
+    elm.setAttribute('y', fmt((+elm.getAttribute('y') || 0) + dy));
+    elm.querySelectorAll('tspan').forEach(ts => {
+      ts.setAttribute('x', elm.getAttribute('x'));
+    });
+  } else if (tag === 'path') {
+    const ed = parsePath(elm.getAttribute('d'));
+    ed.anchors.forEach(a => {
+      a.x += dx; a.y += dy;
+      if (a.in) { a.in.x += dx; a.in.y += dy; }
+      if (a.out) { a.out.x += dx; a.out.y += dy; }
+    });
+    elm.setAttribute('d', buildPathD(ed));
+    if (editing && editing.elm === elm) {
+      editing.anchors = ed.anchors;
+    }
+  } else {
+    const transform = elm.getAttribute('transform') || '';
+    elm.setAttribute('transform', `translate(${fmt(dx)} ${fmt(dy)}) ${transform}`.trim());
+  }
+}
+
+function resizeElement(elm, bounds, corner, point, originalTransform) {
+  const corners = [
+    { x: bounds.x, y: bounds.y },
+    { x: bounds.x + bounds.w, y: bounds.y },
+    { x: bounds.x, y: bounds.y + bounds.h },
+    { x: bounds.x + bounds.w, y: bounds.y + bounds.h }
+  ];
+  const start = corners[corner];
+  const anchor = corners[3 - corner];
+  const minScaleX = 1 / Math.max(bounds.w, 1);
+  const minScaleY = 1 / Math.max(bounds.h, 1);
+  let scaleX = (point.x - anchor.x) / (start.x - anchor.x || 1);
+  let scaleY = (point.y - anchor.y) / (start.y - anchor.y || 1);
+  if (Math.abs(scaleX) < minScaleX) scaleX = (scaleX < 0 ? -1 : 1) * minScaleX;
+  if (Math.abs(scaleY) < minScaleY) scaleY = (scaleY < 0 ? -1 : 1) * minScaleY;
+
+  const originTransform = originalTransform ? ` ${originalTransform}` : '';
+  elm.setAttribute('transform',
+    `translate(${fmt(anchor.x)} ${fmt(anchor.y)}) scale(${fmt(scaleX)} ${fmt(scaleY)}) translate(${fmt(-anchor.x)} ${fmt(-anchor.y)})${originTransform}`);
+}
+
+function select(elm) {
+  closeTextEditor(false);
+  selected = elm;
+  editing = null;
+  if (state.tool === 'direct' && isPath(elm)) {
+    startEdit(elm);
+  }
+  renderOverlay();
+  renderProps();
+  renderLayers();
+}
+
+function deselect() {
+  closeTextEditor(false);
+  selected = null;
+  editing = null;
+  renderOverlay();
+  renderProps();
+  renderLayers();
+}
+
+function renderOverlay() {
+  if (editing) { renderPathEditor(); return; }
+  overlay.innerHTML = '';
+  if (!selected) return;
+  let bb;
+  try { bb = getElemBBox(selected); } catch (e) { return; }
+  const u = 1 / state.zoom;
+  overlay.appendChild(el('rect', {
+    x: bb.x, y: bb.y,
+    width: Math.max(bb.w, 0.1), height: Math.max(bb.h, 0.1),
+    fill: 'none', stroke: '#4c8dff',
+    'stroke-width': 1.4 * u, 'stroke-dasharray': `${5 * u} ${4 * u}`,
+    rx: 2 * u
+  }));
+  [[bb.x, bb.y], [bb.x + bb.w, bb.y], [bb.x, bb.y + bb.h], [bb.x + bb.w, bb.y + bb.h]].forEach((c, i) => {
+    overlay.appendChild(el('rect', {
+      x: c[0] - 4 * u, y: c[1] - 4 * u, width: 8 * u, height: 8 * u,
+      fill: '#ffffff', stroke: '#4c8dff', 'stroke-width': 1.5 * u, rx: 1.5 * u,
+      'data-resize-handle': i, 'pointer-events': 'all',
+      style: `cursor:${['nwse-resize', 'nesw-resize', 'nesw-resize', 'nwse-resize'][i]}`
+    }));
+  });
+}
+
+/* ================= إدراج صورة نقطية عادية (بدون فكتور) ================= */
+function insertRasterImageFromUrl(src) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    let w = img.naturalWidth || 240;
+    let h = img.naturalHeight || 240;
+    const maxDim = Math.min(ART_W, ART_H) * 0.75;
+    if (w > maxDim || h > maxDim) {
+      const sc = maxDim / Math.max(w, h);
+      w = Math.round(w * sc);
+      h = Math.round(h * sc);
+    }
+    const x = Math.round((ART_W - w) / 2);
+    const y = Math.round((ART_H - h) / 2);
+
+    const imageEl = el('image', {
+      href: src,
+      x: x,
+      y: y,
+      width: w,
+      height: h,
+      preserveAspectRatio: 'xMidYMid meet',
+      opacity: state.opacity
+    });
+    artwork.appendChild(imageEl);
+    select(imageEl);
+    pushHist();
+    renderLayers();
+    toast('🖼️ تم إدراج الصورة كطبقة عادية باللوحة');
+  };
+  img.onerror = () => toast('❌ تعذر تحميل الصورة');
+  img.src = src;
+}
+
+function insertRasterImage(file) {
+  const reader = new FileReader();
+  reader.onload = () => insertRasterImageFromUrl(reader.result);
+  reader.readAsDataURL(file);
+}
+
+$('#btnInsertImg').onclick = () => $('#fileInsertImgDirect').click();
+$('#fileInsertImgDirect').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) insertRasterImage(f);
+  e.target.value = '';
+});
+
+$('#traceAsRegularImg').onclick = () => {
+  const f = $('#traceFile').files[0];
+  if (!f) { toast('⚠️ الرجاء اختيار صورة أولاً'); return; }
+  insertRasterImage(f);
+  closeTrace();
+};
+
+/* ================= أداة قص الصور (Crop Tool) ================= */
+let cropState = {
+  img: null,
+  elm: null,
+  ratio: 'free',
+  box: { x: 0, y: 0, w: 0, h: 0 },
+  dragging: false,
+  start: { x: 0, y: 0 }
+};
+
+const cropModal = $('#cropModal'), cropCanvas = $('#cropCanvas'), cropCtx = cropCanvas.getContext('2d');
+
+function openCropTool(imgElm) {
+  const href = imgElm.getAttribute('href');
+  if (!href) return;
+  const im = new Image();
+  im.crossOrigin = 'anonymous';
+  im.onload = () => {
+    cropState.img = im;
+    cropState.elm = imgElm;
+    cropState.ratio = 'free';
+    $$('.crop-ratio-btn').forEach(b => b.classList.toggle('active', b.dataset.ratio === 'free'));
+    
+    // ضبط قياس كانفاس القص
+    const maxW = 560, maxH = 340;
+    const sc = Math.min(maxW / im.width, maxH / im.height, 1);
+    cropCanvas.width = Math.round(im.width * sc);
+    cropCanvas.height = Math.round(im.height * sc);
+
+    // بوكس افتراضي يغطي 80% من الوسط
+    const bw = cropCanvas.width * 0.8, bh = cropCanvas.height * 0.8;
+    cropState.box = {
+      x: (cropCanvas.width - bw) / 2,
+      y: (cropCanvas.height - bh) / 2,
+      w: bw,
+      h: bh
+    };
+    renderCropCanvas();
+    cropModal.classList.remove('hidden');
+  };
+  im.src = href;
+}
+
+function renderCropCanvas() {
+  const { width, height } = cropCanvas;
+  cropCtx.clearRect(0, 0, width, height);
+  cropCtx.drawImage(cropState.img, 0, 0, width, height);
+
+  // تظليل الخلفية خارج إطار القص
+  cropCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  cropCtx.fillRect(0, 0, width, height);
+
+  // إظهار منطقة القص واضحة
+  const b = cropState.box;
+  cropCtx.save();
+  cropCtx.beginPath();
+  cropCtx.rect(b.x, b.y, b.w, b.h);
+  cropCtx.clip();
+  cropCtx.drawImage(cropState.img, 0, 0, width, height);
+  cropCtx.restore();
+
+  // رسم إطار ومقابض القص
+  cropCtx.strokeStyle = '#4c8dff';
+  cropCtx.lineWidth = 2;
+  cropCtx.strokeRect(b.x, b.y, b.w, b.h);
+
+  // رسم شبكة الثلث (Rule of thirds)
+  cropCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+  cropCtx.lineWidth = 1;
+  cropCtx.beginPath();
+  cropCtx.moveTo(b.x + b.w / 3, b.y); cropCtx.lineTo(b.x + b.w / 3, b.y + b.h);
+  cropCtx.moveTo(b.x + (2 * b.w) / 3, b.y); cropCtx.lineTo(b.x + (2 * b.w) / 3, b.y + b.h);
+  cropCtx.moveTo(b.x, b.y + b.h / 3); cropCtx.lineTo(b.x + b.w, b.y + b.h / 3);
+  cropCtx.moveTo(b.x, b.y + (2 * b.h) / 3); cropCtx.lineTo(b.x + b.w, b.y + (2 * b.h) / 3);
+  cropCtx.stroke();
+}
+
+function applyCropRatio(w, h) {
+  if (cropState.ratio === '1:1') {
+    const s = Math.min(Math.abs(w), Math.abs(h));
+    return { w: Math.sign(w) * s, h: Math.sign(h) * s };
+  }
+  if (cropState.ratio === '4:3') {
+    return { w, h: Math.sign(h) * Math.abs(w) * (3 / 4) };
+  }
+  if (cropState.ratio === '16:9') {
+    return { w, h: Math.sign(h) * Math.abs(w) * (9 / 16) };
+  }
+  return { w, h };
+}
+
+cropCanvas.addEventListener('pointerdown', e => {
+  const r = cropCanvas.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  cropState.dragging = true;
+  cropState.start = { x, y };
+  cropState.box = { x, y, w: 0, h: 0 };
+  cropCanvas.setPointerCapture(e.pointerId);
+});
+
+cropCanvas.addEventListener('pointermove', e => {
+  if (!cropState.dragging) return;
+  const r = cropCanvas.getBoundingClientRect();
+  const curX = clamp(e.clientX - r.left, 0, cropCanvas.width);
+  const curY = clamp(e.clientY - r.top, 0, cropCanvas.height);
+  let w = curX - cropState.start.x, h = curY - cropState.start.y;
+  const adj = applyCropRatio(w, h);
+  
+  const bx = adj.w < 0 ? cropState.start.x + adj.w : cropState.start.x;
+  const by = adj.h < 0 ? cropState.start.y + adj.h : cropState.start.y;
+  cropState.box = {
+    x: clamp(bx, 0, cropCanvas.width),
+    y: clamp(by, 0, cropCanvas.height),
+    w: clamp(Math.abs(adj.w), 10, cropCanvas.width - bx),
+    h: clamp(Math.abs(adj.h), 10, cropCanvas.height - by)
+  };
+  renderCropCanvas();
+});
+
+cropCanvas.addEventListener('pointerup', () => { cropState.dragging = false; });
+cropCanvas.addEventListener('pointercancel', () => { cropState.dragging = false; });
+
+$$('.crop-ratio-btn').forEach(b => {
+  b.onclick = () => {
+    $$('.crop-ratio-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    cropState.ratio = b.dataset.ratio;
+    const adj = applyCropRatio(cropState.box.w, cropState.box.h);
+    cropState.box.w = Math.abs(adj.w);
+    cropState.box.h = Math.abs(adj.h);
+    renderCropCanvas();
+  };
+});
+
+$('#cropClose').onclick = () => cropModal.classList.add('hidden');
+$('#cropCancel').onclick = () => cropModal.classList.add('hidden');
+
+$('#cropApply').onclick = () => {
+  const b = cropState.box;
+  if (b.w < 5 || b.h < 5) return;
+  const scX = cropState.img.naturalWidth / cropCanvas.width;
+  const scY = cropState.img.naturalHeight / cropCanvas.height;
+  
+  const realX = Math.round(b.x * scX), realY = Math.round(b.y * scY);
+  const realW = Math.round(b.w * scX), realH = Math.round(b.h * scY);
+
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = realW;
+  outCanvas.height = realH;
+  const outCtx = outCanvas.getContext('2d');
+  outCtx.drawImage(cropState.img, realX, realY, realW, realH, 0, 0, realW, realH);
+
+  const newUrl = outCanvas.toDataURL('image/png');
+  cropState.elm.setAttribute('href', newUrl);
+  // تعديل أبعاد العنصر لتناسب نسبة القص الجديدة
+  const oldW = +cropState.elm.getAttribute('width') || realW;
+  cropState.elm.setAttribute('height', Math.round(oldW * (realH / realW)));
+  
+  cropModal.classList.add('hidden');
+  select(cropState.elm);
+  pushHist();
+  toast('✂️ تم قص الصورة بنجاح وتحديثها');
+};
+
+$('#btnCropImg').onclick = () => {
+  if (selected && selected.tagName.toLowerCase() === 'image') openCropTool(selected);
+};
+
+/* ================= أداة إزالة الخلفية الذكية (Remove Background Tool) ================= */
+let removeBgState = {
+  img: null,
+  elm: null,
+  origCanvas: null,
+  targetColor: [255, 255, 255],
+  picking: false
+};
+
+const removeBgModal = $('#removeBgModal'), removeBgCanvas = $('#removeBgCanvas'), removeBgCtx = removeBgCanvas.getContext('2d');
+
+function openRemoveBgTool(imgElm) {
+  const href = imgElm.getAttribute('href');
+  if (!href) return;
+  const im = new Image();
+  im.crossOrigin = 'anonymous';
+  im.onload = () => {
+    removeBgState.img = im;
+    removeBgState.elm = imgElm;
+    removeBgState.picking = false;
+    $('#bgPickHint').classList.add('hidden');
+
+    const maxW = 560, maxH = 340;
+    const sc = Math.min(maxW / im.width, maxH / im.height, 1);
+    removeBgCanvas.width = Math.round(im.width * sc);
+    removeBgCanvas.height = Math.round(im.height * sc);
+
+    // كانفاس لحفظ الصورة الأصلية
+    const oc = document.createElement('canvas');
+    oc.width = removeBgCanvas.width;
+    oc.height = removeBgCanvas.height;
+    const oct = oc.getContext('2d');
+    oct.drawImage(im, 0, 0, oc.width, oc.height);
+    removeBgState.origCanvas = oc;
+
+    // استنتاج لون زاوية الصورة كخلفية افتراضية
+    const p = oct.getImageData(0, 0, 1, 1).data;
+    removeBgState.targetColor = [p[0], p[1], p[2]];
+    $('#bgTargetColor').value = toHex(`rgb(${p[0]},${p[1]},${p[2]})`);
+
+    processRemoveBackground();
+    removeBgModal.classList.remove('hidden');
+  };
+  im.src = href;
+}
+
+function processRemoveBackground() {
+  if (!removeBgState.origCanvas) return;
+  const w = removeBgCanvas.width, h = removeBgCanvas.height;
+  const octx = removeBgState.origCanvas.getContext('2d');
+  const imgData = octx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+
+  const mode = $('#bgRemoveMode').value;
+  const tol = +$('#bgTolerance').value;
+  const feather = +$('#bgFeather').value;
+  const [tr, tg, tb] = removeBgState.targetColor;
+
+  const isMatch = (r, g, b) => {
+    const d = Math.hypot(r - tr, g - tg, b - tb);
+    return d <= tol * 2.2;
+  };
+
+  const mask = new Uint8Array(w * h);
+
+  if (mode === 'chroma') {
+    for (let i = 0; i < data.length; i += 4) {
+      if (isMatch(data[i], data[i + 1], data[i + 2])) {
+        mask[i / 4] = 1;
+      }
+    }
+  } else {
+    // Flood Fill من الزوايا الأربع والأطراف
+    const queue = [];
+    const pushP = (x, y) => {
+      if (x < 0 || y < 0 || x >= w || y >= h) return;
+      const idx = y * w + x;
+      if (!mask[idx]) {
+        const pi = idx * 4;
+        if (isMatch(data[pi], data[pi + 1], data[pi + 2])) {
+          mask[idx] = 1;
+          queue.push(x, y);
+        }
+      }
+    };
+
+    // فحص الإطار الخارجي للصورة
+    for (let x = 0; x < w; x++) { pushP(x, 0); pushP(x, h - 1); }
+    for (let y = 0; y < h; y++) { pushP(0, y); pushP(w - 1, y); }
+
+    let qIdx = 0;
+    while (qIdx < queue.length) {
+      const cx = queue[qIdx++], cy = queue[qIdx++];
+      pushP(cx + 1, cy);
+      pushP(cx - 1, cy);
+      pushP(cx, cy + 1);
+      pushP(cx, cy - 1);
+    }
+  }
+
+  // تطبيق القناع مع الشفافية والـ Feather
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      const pi = idx * 4;
+      if (mask[idx]) {
+        data[pi + 3] = 0; // تفريغ كامل
+      } else if (feather > 0) {
+        // فحص الجوار للتنعيم
+        let nearEdge = false;
+        for (let dy = -feather; dy <= feather && !nearEdge; dy++) {
+          for (let dx = -feather; dx <= feather && !nearEdge; dx++) {
+            const nx = x + dx, ny = y + dy;
+            if (nx >= 0 && ny >= 0 && nx < w && ny < h && mask[ny * w + nx]) {
+              nearEdge = true;
+            }
+          }
+        }
+        if (nearEdge) data[pi + 3] = Math.round(data[pi + 3] * 0.45);
+      }
+    }
+  }
+
+  removeBgCtx.clearRect(0, 0, w, h);
+  removeBgCtx.putImageData(imgData, 0, 0);
+}
+
+$('#bgTolerance').addEventListener('input', e => {
+  $('#bgTolVal').textContent = e.target.value;
+  processRemoveBackground();
+});
+$('#bgFeather').addEventListener('input', e => {
+  $('#bgFeatherVal').textContent = e.target.value + 'px';
+  processRemoveBackground();
+});
+$('#bgRemoveMode').addEventListener('change', processRemoveBackground);
+$('#bgTargetColor').addEventListener('input', e => {
+  const m = e.target.value.match(/[0-9a-f]{2}/gi);
+  if (m && m.length === 3) {
+    removeBgState.targetColor = m.map(c => parseInt(c, 16));
+    processRemoveBackground();
+  }
+});
+
+// قطارة اختيار اللون من الكانفاس
+$('#bgPickEye').onclick = () => {
+  removeBgState.picking = true;
+  $('#bgPickHint').classList.remove('hidden');
+};
+removeBgCanvas.onclick = e => {
+  if (!removeBgState.picking || !removeBgState.origCanvas) return;
+  const r = removeBgCanvas.getBoundingClientRect();
+  const x = Math.round(e.clientX - r.left), y = Math.round(e.clientY - r.top);
+  const oct = removeBgState.origCanvas.getContext('2d');
+  const p = oct.getImageData(x, y, 1, 1).data;
+  removeBgState.targetColor = [p[0], p[1], p[2]];
+  $('#bgTargetColor').value = toHex(`rgb(${p[0]},${p[1]},${p[2]})`);
+  removeBgState.picking = false;
+  $('#bgPickHint').classList.add('hidden');
+  processRemoveBackground();
+};
+
+$('#removeBgClose').onclick = () => removeBgModal.classList.add('hidden');
+$('#removeBgCancel').onclick = () => removeBgModal.classList.add('hidden');
+
+$('#removeBgApply').onclick = () => {
+  // إعادة معالجة الصورة بدقتها الأصلية الكاملة وتطبيقها
+  const im = removeBgState.img;
+  const fullCanvas = document.createElement('canvas');
+  fullCanvas.width = im.naturalWidth;
+  fullCanvas.height = im.naturalHeight;
+  const fctx = fullCanvas.getContext('2d');
+  fctx.drawImage(im, 0, 0);
+  
+  // تطبيق الشفافية المعتمدة
+  const previewData = removeBgCtx.getImageData(0, 0, removeBgCanvas.width, removeBgCanvas.height);
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = removeBgCanvas.width;
+  outCanvas.height = removeBgCanvas.height;
+  outCanvas.getContext('2d').putImageData(previewData, 0, 0);
+
+  const transparentUrl = outCanvas.toDataURL('image/png');
+  removeBgState.elm.setAttribute('href', transparentUrl);
+  removeBgModal.classList.add('hidden');
+  select(removeBgState.elm);
+  pushHist();
+  toast('🪄 تم إزالة الخلفية بنجاح وحفظ الصورة مفرغة');
+};
+
+$('#btnRemoveBg').onclick = () => {
+  if (selected && selected.tagName.toLowerCase() === 'image') openRemoveBgTool(selected);
+};
+
+/* ================= معالجة مسارات بيزيه (Bézier Engine) ================= */
+function parsePath(d) {
+  if (!d) return { anchors: [], segs: [], closed: false, closeSeg: 'L' };
+  const toks = (d.match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g) || []);
+  const anchors = [], segs = [];
+  let closed = false;
+  let i = 0, cmd = '', cx = 0, cy = 0, pc2 = null;
+
+  const num = () => parseFloat(toks[i++]);
+  const push = (x, y, move) => { anchors.push({ x: x, y: y, in: null, out: null, move: !!move }); };
+
+  while (i < toks.length) {
+    if (/[a-zA-Z]/.test(toks[i])) cmd = toks[i++];
+    const rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase();
+    if (C === 'M') {
+      let x = num(), y = num();
+      if (rel) { x += cx; y += cy; }
+      if (anchors.length) segs.push(null);
+      push(x, y, true);
+      cx = x; cy = y; pc2 = null;
+      cmd = rel ? 'l' : 'L';
+    } else if (C === 'L') {
+      let x = num(), y = num();
+      if (rel) { x += cx; y += cy; }
+      segs.push('L'); push(x, y); pc2 = null;
+    } else if (C === 'H') {
+      let x = num(); if (rel) x += cx;
+      segs.push('L'); push(x, cy); pc2 = null;
+    } else if (C === 'V') {
+      let y = num(); if (rel) y += cy;
+      segs.push('L'); push(cx, y); pc2 = null;
+    } else if (C === 'C') {
+      let x1 = num(), y1 = num(), x2 = num(), y2 = num(), x = num(), y = num();
+      if (rel) { x1 += cx; y1 += cy; x2 += cx; y2 += cy; x += cx; y += cy; }
+      if (anchors.length) anchors[anchors.length - 1].out = { x: x1, y: y1 };
+      segs.push('C'); push(x, y);
+      anchors[anchors.length - 1].in = { x: x2, y: y2 };
+      pc2 = { x: x2, y: y2 };
+    } else if (C === 'S') {
+      let x2 = num(), y2 = num(), x = num(), y = num();
+      if (rel) { x2 += cx; y2 += cy; x += cx; y += cy; }
+      const x1 = pc2 ? 2 * cx - pc2.x : cx, y1 = pc2 ? 2 * cy - pc2.y : cy;
+      if (anchors.length) anchors[anchors.length - 1].out = { x: x1, y: y1 };
+      segs.push('C'); push(x, y);
+      anchors[anchors.length - 1].in = { x: x2, y: y2 };
+      pc2 = { x: x2, y: y2 };
+    } else if (C === 'Z') {
+      closed = true;
+      break;
+    } else {
+      i++; continue;
+    }
+    if (anchors.length) {
+      cx = anchors[anchors.length - 1].x;
+      cy = anchors[anchors.length - 1].y;
+    }
+  }
+
+  if (closed && anchors.length > 2 && segs.length) {
+    const f = anchors[0], l = anchors[anchors.length - 1];
+    if (dist(f.x, f.y, l.x, l.y) < 0.5) {
+      const t = segs[segs.length - 1];
+      f.in = l.in;
+      anchors.pop();
+      segs.pop();
+      return { anchors: anchors, segs: segs, closed: true, closeSeg: t || 'L' };
+    }
+  }
+  return { anchors: anchors, segs: segs, closed: closed, closeSeg: 'L' };
+}
+
+function buildPathD(ed) {
+  const A = ed.anchors;
+  if (!A || !A.length) return '';
+  let d = '';
+  A.forEach((a, i) => {
+    if (i === 0 || a.move) {
+      d += `M ${fmt(a.x)} ${fmt(a.y)} `;
+      return;
+    }
+    const p = A[i - 1], t = ed.segs[i - 1];
+    if (t === 'C' || p.out || a.in) {
+      const o = p.out || p, inn = a.in || a;
+      d += `C ${fmt(o.x)} ${fmt(o.y)} ${fmt(inn.x)} ${fmt(inn.y)} ${fmt(a.x)} ${fmt(a.y)} `;
+    } else {
+      d += `L ${fmt(a.x)} ${fmt(a.y)} `;
+    }
+  });
+  if (ed.closed && A.length) {
+    const p = A[A.length - 1];
+    if (ed.closeSeg === 'C' || p.out || A[0].in) {
+      const o = p.out || p, inn = A[0].in || A[0];
+      d += `C ${fmt(o.x)} ${fmt(o.y)} ${fmt(inn.x)} ${fmt(inn.y)} ${fmt(A[0].x)} ${fmt(A[0].y)} `;
+    }
+    d += 'Z';
+  }
+  return d.trim();
+}
+
+function segType(ed, i) {
+  const n = ed.anchors.length;
+  if (i < n - 1) return ed.segs[i];
+  return ed.closed ? ed.closeSeg : null;
+}
+function segPoint(ed, i, t) {
+  const n = ed.anchors.length, a = ed.anchors[i], b = ed.anchors[(i + 1) % n];
+  if (segType(ed, i) === 'C' || a.out || b.in) {
+    const c1 = a.out || a, c2 = b.in || b, u = 1 - t;
+    return {
+      x: u * u * u * a.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * b.x,
+      y: u * u * u * a.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * b.y
+    };
+  }
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+function nearestOnPath(ed, p) {
+  const n = ed.anchors.length;
+  if (n < 2) return null;
+  const count = ed.closed ? n : n - 1;
+  let best = null;
+
+  for (let i = 0; i < count; i++) {
+    const a = ed.anchors[i], b = ed.anchors[(i + 1) % n];
+    const isC = (segType(ed, i) === 'C' || a.out || b.in);
+
+    if (isC) {
+      for (let s = 0; s <= 40; s++) {
+        const tt = s / 40, q = segPoint(ed, i, tt), d = (q.x - p.x) ** 2 + (q.y - p.y) ** 2;
+        if (!best || d < best.d) best = { d: d, i: i, t: tt };
+      }
+    } else {
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const len2 = dx * dx + dy * dy;
+      if (len2 > 0) {
+        const tt = clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0.04, 0.96);
+        const qx = a.x + tt * dx, qy = a.y + tt * dy;
+        const d = (qx - p.x) ** 2 + (qy - p.y) ** 2;
+        if (!best || d < best.d) best = { d: d, i: i, t: tt };
+      }
+    }
+  }
+  return best;
+}
+
+function splitSegment(i, t) {
+  const ed = editing, n = ed.anchors.length;
+  const a = ed.anchors[i], b = ed.anchors[(i + 1) % n], j = (i + 1) % n;
+  const isC = (segType(ed, i) === 'C' || a.out || b.in);
+
+  let na;
+  if (isC) {
+    const c1 = a.out || { x: a.x + (b.x - a.x) / 3, y: a.y + (b.y - a.y) / 3 };
+    const c2 = b.in || { x: a.x + 2 * (b.x - a.x) / 3, y: a.y + 2 * (b.y - a.y) / 3 };
+    const l = (p0, p1) => ({ x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t });
+    const p01 = l(a, c1), p12 = l(c1, c2), p23 = l(c2, b);
+    const p012 = l(p01, p12), p123 = l(p12, p23);
+    const p0123 = l(p012, p123);
+
+    na = { x: p0123.x, y: p0123.y, in: p012, out: p123, move: false };
+    a.out = p01;
+    b.in = p23;
+    if (j === 0) {
+      ed.anchors.push(na); ed.segs.push('C'); ed.closeSeg = 'C';
+    } else {
+      ed.anchors.splice(j, 0, na); ed.segs.splice(i, 1, 'C', 'C');
+    }
+  } else {
+    const tc = clamp(t, 0.05, 0.95);
+    na = { x: a.x + (b.x - a.x) * tc, y: a.y + (b.y - a.y) * tc, in: null, out: null, move: false };
+    if (j === 0) {
+      ed.anchors.push(na); ed.segs.push('L'); ed.closeSeg = 'L';
+    } else {
+      ed.anchors.splice(j, 0, na); ed.segs.splice(i, 1, 'L', 'L');
+    }
+  }
+  ed.sel = ed.anchors.indexOf(na);
+  commitEdit();
+  renderProps();
+  pushHist();
+  toast('➕ تمت إضافة نقطة جديدة إلى المسار');
+}
+
+function deleteAnchorAt(k) {
+  if (!editing || k < 0 || k >= editing.anchors.length) return;
+  const ed = editing, n = ed.anchors.length;
+  if (n <= 2) {
+    toast('⚠️ لا يمكن حذف النقطة: المسار يتطلب نقطتين على الأقل');
+    return;
+  }
+  const A = ed.anchors;
+
+  if (ed.closed) {
+    if (n === 3) {
+      A.splice(k, 1);
+      ed.closed = false;
+      ed.segs = ['L'];
+      A[0].move = true; A[0].in = null;
+      A[1].out = null;
+    } else {
+      A.splice(k, 1);
+      if (k === 0) {
+        ed.segs.splice(0, 1);
+        A[0].move = true; A[0].in = null;
+      } else if (k === n - 1) {
+        ed.segs.splice(n - 2, 1);
+        A[A.length - 1].out = null;
+      } else {
+        ed.segs.splice(k - 1, 2, 'L');
+        A[k - 1].out = null;
+        if (k < A.length) A[k].in = null;
+      }
+    }
+  } else {
+    if (k === 0) {
+      A.splice(0, 1); ed.segs.splice(0, 1); A[0].move = true; A[0].in = null;
+    } else if (k === n - 1) {
+      A.splice(n - 1, 1); ed.segs.splice(n - 2, 1); A[A.length - 1].out = null;
+    } else {
+      A.splice(k, 1);
+      ed.segs.splice(k - 1, 2, 'L');
+      A[k - 1].out = null;
+      if (k < A.length) A[k].in = null;
+    }
+  }
+
+  ed.sel = -1;
+  commitEdit();
+  renderProps();
+  pushHist();
+  toast('🗑️ تم حذف النقطة');
+}
+
+function commitEdit() {
+  if (!editing) return;
+  editing.elm.setAttribute('d', buildPathD(editing));
+  renderPathEditor();
+  scheduleCodeUpdate();
+}
+
+function editHit(p) {
+  const ed = editing;
+  if (!ed) return null;
+  const n = ed.anchors.length;
+  const handleTol = 14 / state.zoom;
+  const anchorTol = 12 / state.zoom;
+
+  for (let i = 0; i < n; i++) {
+    const a = ed.anchors[i];
+    const canIn = ed.closed || i > 0;
+    const canOut = ed.closed || i < n - 1;
+    if (canOut && a.out && dist(p.x, p.y, a.out.x, a.out.y) < handleTol) {
+      return { type: 'handle', i: i, side: 'out' };
+    }
+    if (canIn && a.in && dist(p.x, p.y, a.in.x, a.in.y) < handleTol) {
+      return { type: 'handle', i: i, side: 'in' };
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (dist(p.x, p.y, ed.anchors[i].x, ed.anchors[i].y) < anchorTol) {
+      return { type: 'anchor', i: i };
+    }
+  }
+
+  const strokeTol = 11 / state.zoom;
+  const near = nearestOnPath(ed, p);
+  if (near && Math.sqrt(near.d) < strokeTol) {
+    return { type: 'stroke', i: near.i, t: near.t };
+  }
+
+  return null;
+}
+
+function startEdit(elm) {
+  if (!isPath(elm)) return;
+  const ed = parsePath(elm.getAttribute('d'));
+  if (ed.anchors.length < 2) return;
+  editing = {
+    elm: elm,
+    anchors: ed.anchors,
+    segs: ed.segs,
+    closed: ed.closed,
+    closeSeg: ed.closeSeg,
+    sel: -1
+  };
+  renderOverlay();
+  renderProps();
+}
+
+function renderPathEditor() {
+  overlay.innerHTML = '';
+  if (!editing) return;
+  const ed = editing, u = 1 / state.zoom;
+  const n = ed.anchors.length;
+
+  ed.anchors.forEach((a, i) => {
+    const canIn = ed.closed || i > 0;
+    const canOut = ed.closed || i < n - 1;
+
+    if (canOut && a.out) {
+      overlay.appendChild(el('line', {
+        x1: a.x, y1: a.y, x2: a.out.x, y2: a.out.y,
+        stroke: '#4c8dff', 'stroke-width': 1.4 * u, 'stroke-dasharray': `${3 * u} ${2 * u}`
+      }));
+      overlay.appendChild(el('circle', {
+        cx: a.out.x, cy: a.out.y, r: 5.5 * u,
+        fill: '#ffffff', stroke: '#4c8dff', 'stroke-width': 2 * u
+      }));
+    }
+    if (canIn && a.in) {
+      overlay.appendChild(el('line', {
+        x1: a.x, y1: a.y, x2: a.in.x, y2: a.in.y,
+        stroke: '#4c8dff', 'stroke-width': 1.4 * u, 'stroke-dasharray': `${3 * u} ${2 * u}`
+      }));
+      overlay.appendChild(el('circle', {
+        cx: a.in.x, cy: a.in.y, r: 5.5 * u,
+        fill: '#ffffff', stroke: '#4c8dff', 'stroke-width': 2 * u
+      }));
+    }
+  });
+
+  ed.anchors.forEach((a, i) => {
+    const s = 9 * u;
+    const isSel = (i === ed.sel);
+    overlay.appendChild(el('rect', {
+      x: a.x - s / 2, y: a.y - s / 2, width: s, height: s,
+      fill: isSel ? '#4c8dff' : '#ffffff',
+      stroke: isSel ? '#ffffff' : '#14161b',
+      'stroke-width': 1.6 * u, rx: 1.5 * u
+    }));
+  });
+}
+
+/* ================= أداة القلم التفاعلية ================= */
+function penDown(p) {
+  penActive = true;
+  if (!penPts.length) {
+    const a0 = { x: p.x, y: p.y, in: null, out: null };
+    penPts = [a0];
+    drag = { kind: 'pen-drag', anchor: a0, start: p };
+    penTmp = el('path', {
+      fill: 'none', stroke: state.strokeNone ? '#4c8dff' : state.stroke,
+      'stroke-width': state.strokeWidth || 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round'
+    });
+    overlay.appendChild(penTmp);
+    updatePenTmp(p);
+  } else {
+    if (penPts.length >= 2 && dist(p.x, p.y, penPts[0].x, penPts[0].y) < 10 / state.zoom) {
+      finishPen(true);
+      return;
+    }
+    const an = { x: p.x, y: p.y, in: null, out: null };
+    penPts.push(an);
+    drag = { kind: 'pen-drag', anchor: an, start: p };
+    updatePenTmp(p);
+  }
+}
+
+function updatePenTmp(cur) {
+  if (!penTmp || !penPts.length) return;
+  const fakeEd = {
+    anchors: [...penPts],
+    segs: penPts.slice(1).map(() => 'C'),
+    closed: false,
+    closeSeg: 'L'
+  };
+  if (cur && (!drag || drag.kind !== 'pen-drag')) {
+    fakeEd.anchors.push({ x: cur.x, y: cur.y, in: null, out: null });
+    fakeEd.segs.push('C');
+  }
+  penTmp.setAttribute('d', buildPathD(fakeEd));
+}
+
+function finishPen(closed) {
+  if (penTmp) { penTmp.remove(); penTmp = null; }
+  const pts = penPts;
+  penPts = [];
+  penActive = false;
+  if (pts.length >= 2) {
+    const finalEd = {
+      anchors: pts,
+      segs: pts.slice(1).map((_, i) => (pts[i].out || pts[i + 1].in ? 'C' : 'L')),
+      closed: closed,
+      closeSeg: 'L'
+    };
+    const path = el('path', {
+      d: buildPathD(finalEd),
+      fill: state.fillNone ? 'none' : state.fill,
+      stroke: state.strokeNone ? 'none' : state.stroke,
+      'stroke-width': state.strokeWidth,
+      'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+      opacity: state.opacity
+    });
+    artwork.appendChild(path);
+    select(path);
+    pushHist();
+    setTool('direct');
+    startEdit(path);
+    toast('✅ تم إنشاء المسار بنجاح');
+  }
+}
+function cancelPen() {
+  if (penTmp) { penTmp.remove(); penTmp = null; }
+  penPts = [];
+  penActive = false;
+}
+
+/* ================= رسم الأشكال الهندسية ================= */
+function makeShape(kind, p) {
+  const base = {
+    fill: state.fillNone ? 'none' : state.fill,
+    stroke: state.strokeNone ? 'none' : state.stroke,
+    'stroke-width': state.strokeWidth,
+    opacity: state.opacity
+  };
+  if (kind === 'rect') return el('rect', Object.assign(base, { x: fmt(p.x), y: fmt(p.y), width: 0, height: 0, rx: 0 }));
+  if (kind === 'ellipse') return el('ellipse', Object.assign(base, { cx: fmt(p.x), cy: fmt(p.y), rx: 0, ry: 0 }));
+  return el('line', Object.assign(base, { x1: fmt(p.x), y1: fmt(p.y), x2: fmt(p.x), y2: fmt(p.y), 'stroke-linecap': 'round' }));
+}
+
+function updateShape(dr, p) {
+  const s = dr.elm, q = dr.start;
+  if (dr.shape === 'rect') {
+    s.setAttribute('x', fmt(Math.min(q.x, p.x)));
+    s.setAttribute('y', fmt(Math.min(q.y, p.y)));
+    s.setAttribute('width', fmt(Math.abs(p.x - q.x)));
+    s.setAttribute('height', fmt(Math.abs(p.y - q.y)));
+  } else if (dr.shape === 'ellipse') {
+    s.setAttribute('cx', fmt((q.x + p.x) / 2));
+    s.setAttribute('cy', fmt((q.y + p.y) / 2));
+    s.setAttribute('rx', fmt(Math.abs(p.x - q.x) / 2));
+    s.setAttribute('ry', fmt(Math.abs(p.y - q.y) / 2));
+  } else {
+    s.setAttribute('x2', fmt(p.x));
+    s.setAttribute('y2', fmt(p.y));
+  }
+}
+
+/* ================= أداة النصوص ================= */
+function createText(p) {
+  const t = el('text', {
+    x: fmt(p.x), y: fmt(p.y),
+    fill: state.fillNone ? '#e8ebf2' : state.fill,
+    stroke: state.strokeNone ? 'none' : state.stroke,
+    'stroke-width': state.strokeWidth,
+    opacity: state.opacity,
+    'font-size': state.fontSize,
+    'font-family': state.fontFamily,
+    'font-weight': state.fontWeight,
+    'text-anchor': state.textAnchor,
+    direction: state.textDir
+  });
+  t.textContent = 'نص جديد';
+  artwork.appendChild(t);
+  select(t);
+  openTextEditor(t);
+}
+
+function openTextEditor(t) {
+  closeTextEditor(false);
+  const bb = getElemBBox(t);
+  const sp = worldToScreen({ x: bb.x, y: bb.y });
+  const vpRect = viewport.getBoundingClientRect();
+
+  const div = document.createElement('div');
+  div.id = 'textEditor';
+  const ta = document.createElement('textarea');
+  ta.rows = 1;
+  ta.dir = t.getAttribute('direction') || state.textDir;
+  ta.value = [...t.querySelectorAll('tspan')].map(s => s.textContent).join('\n') || t.textContent || '';
+
+  const fs = Math.max(10, (parseFloat(t.getAttribute('font-size')) || state.fontSize) * state.zoom);
+  ta.style.fontSize = fs + 'px';
+  ta.style.fontFamily = t.getAttribute('font-family') || state.fontFamily;
+  const fc = t.getAttribute('fill');
+  ta.style.color = (!fc || fc === 'none') ? '#e8ebf2' : fc;
+
+  div.style.left = (sp.x - vpRect.left) + 'px';
+  div.style.top = (sp.y - vpRect.top) + 'px';
+  div.appendChild(ta);
+  viewport.appendChild(div);
+
+  textEditor = { t: t, div: div, ta: ta };
+  const autoSize = () => {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.style.width = 'auto';
+    ta.style.width = Math.min(460, Math.max(140, ta.scrollWidth + 10)) + 'px';
+  };
+
+  ta.addEventListener('input', () => {
+    updateTextContent(t, ta.value);
+    autoSize();
+  });
+  ta.addEventListener('blur', () => closeTextEditor(false));
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeTextEditor(true); e.preventDefault(); }
+    if (e.key === 'Enter' && e.ctrlKey) { closeTextEditor(false); e.preventDefault(); }
+    e.stopPropagation();
+  });
+  ta.addEventListener('pointerdown', e => e.stopPropagation());
+  ta.focus();
+  ta.select();
+  autoSize();
+}
+
+function updateTextContent(t, str) {
+  const x = t.getAttribute('x') || 0;
+  t.textContent = '';
+  const lines = str.split('\n');
+  lines.forEach((ln, i) => {
+    const ts = el('tspan', { x: x, dy: i === 0 ? 0 : '1.2em' });
+    ts.textContent = ln || ' ';
+    t.appendChild(ts);
+  });
+  renderOverlay();
+  scheduleCodeUpdate();
+  renderLayers();
+  const pc = $('#propTextContent');
+  if (pc && document.activeElement !== pc) pc.value = str;
+}
+
+function closeTextEditor(cancel) {
+  if (!textEditor) return;
+  const ed = textEditor;
+  textEditor = null;
+  ed.div.remove();
+  const val = ed.ta.value.trim();
+  if (cancel || !val) {
+    if (!ed.t.textContent.trim()) {
+      ed.t.remove();
+      if (selected === ed.t) deselect();
+    }
+    return;
+  }
+  updateTextContent(ed.t, ed.ta.value);
+  pushHist();
+}
+
+/* ================= تحويل الأشكال إلى مسار ================= */
+function convertToPath(shape) {
+  const tag = shape.tagName.toLowerCase();
+  let d = '';
+  if (tag === 'rect') {
+    const x = +shape.getAttribute('x') || 0, y = +shape.getAttribute('y') || 0,
+          w = +shape.getAttribute('width') || 0, h = +shape.getAttribute('height') || 0;
+    d = `M ${fmt(x)} ${fmt(y)} L ${fmt(x + w)} ${fmt(y)} L ${fmt(x + w)} ${fmt(y + h)} L ${fmt(x)} ${fmt(y + h)} Z`;
+  } else if (tag === 'ellipse') {
+    const cx = +shape.getAttribute('cx') || 0, cy = +shape.getAttribute('cy') || 0,
+          rx = +shape.getAttribute('rx') || 0, ry = +shape.getAttribute('ry') || 0;
+    const kx = rx * 0.5522847, ky = ry * 0.5522847;
+    d = `M ${fmt(cx)} ${fmt(cy - ry)} ` +
+        `C ${fmt(cx + kx)} ${fmt(cy - ry)} ${fmt(cx + rx)} ${fmt(cy - ky)} ${fmt(cx + rx)} ${fmt(cy)} ` +
+        `C ${fmt(cx + rx)} ${fmt(cy + ky)} ${fmt(cx + kx)} ${fmt(cy + ry)} ${fmt(cx)} ${fmt(cy + ry)} ` +
+        `C ${fmt(cx - kx)} ${fmt(cy + ry)} ${fmt(cx - rx)} ${fmt(cy + ky)} ${fmt(cx - rx)} ${fmt(cy)} ` +
+        `C ${fmt(cx - rx)} ${fmt(cy - ky)} ${fmt(cx - kx)} ${fmt(cy - ry)} ${fmt(cx)} ${fmt(cy - ry)} Z`;
+  } else if (tag === 'line') {
+    const x1 = shape.getAttribute('x1') || 0, y1 = shape.getAttribute('y1') || 0,
+          x2 = shape.getAttribute('x2') || 0, y2 = shape.getAttribute('y2') || 0;
+    d = `M ${fmt(+x1)} ${fmt(+y1)} L ${fmt(+x2)} ${fmt(+y2)}`;
+  } else return;
+
+  const path = el('path', {
+    d: d,
+    fill: shape.getAttribute('fill') || 'none',
+    stroke: shape.getAttribute('stroke') || 'none',
+    'stroke-width': shape.getAttribute('stroke-width') || state.strokeWidth,
+    opacity: shape.getAttribute('opacity') || 1
+  });
+  artwork.insertBefore(path, shape);
+  shape.remove();
+  select(path);
+  setTool('direct');
+  pushHist();
+  toast('✨ تم تحويل الشكل إلى مسار حر قابل لتعديل النقاط والمقابض');
+}
+
+/* ================= فك التجميع ================= */
+function ungroupElement(g) {
+  if (!g || g.tagName.toLowerCase() !== 'g') return;
+  const children = [...g.children];
+  children.forEach(c => artwork.insertBefore(c, g));
+  g.remove();
+  if (children.length) select(children[0]); else deselect();
+  pushHist();
+  renderLayers();
+  toast('🧩 تم فك التجميع إلى مسارات منفصلة');
+}
+
+/* ================= لوحة الخصائص ================= */
+function toHex(c) {
+  if (!c) return '#000000';
+  if (c[0] === '#') return c;
+  const m = c.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
+  if (m) return '#' + [1, 2, 3].map(i => Math.round(+m[i]).toString(16).padStart(2, '0')).join('');
+  return '#000000';
+}
+
+function renderProps() {
+  const has = !!selected;
+  $('#propEmpty').classList.toggle('hidden', has);
+  $('#propElement').classList.toggle('hidden', !has);
+  if (!has) return;
+
+  const S = selected, tg = S.tagName.toLowerCase();
+  $('#propType').textContent = layerName(S);
+
+  $('#ungroupSec').classList.toggle('hidden', tg !== 'g');
+  $('#convertPathSec').classList.toggle('hidden', !['rect', 'ellipse', 'line'].includes(tg));
+  $('#colorPropsSec').classList.toggle('hidden', tg === 'image');
+  $('#imageActionsSec').classList.toggle('hidden', tg !== 'image');
+
+  let bb = { x: 0, y: 0, w: 0, h: 0 };
+  try { bb = getElemBBox(S); } catch (e) {}
+  $('#propX').value = Math.round(bb.x);
+  $('#propY').value = Math.round(bb.y);
+  $('#propW').value = Math.round(bb.w);
+  $('#propH').value = Math.round(bb.h);
+
+  const canWH = (tg === 'rect' || tg === 'ellipse' || tg === 'image');
+  $('#propW').disabled = !canWH;
+  $('#propH').disabled = !canWH;
+
+  const f = S.getAttribute('fill'), fNone = !f || f === 'none';
+  $('#propFillNone').checked = fNone;
+  $('#propFill').value = fNone ? '#000000' : toHex(f);
+  $('#propFillOp').value = String(S.getAttribute('fill-opacity') ?? 1);
+
+  const st = S.getAttribute('stroke'), stNone = !st || st === 'none';
+  $('#propStrokeNone').checked = stNone;
+  $('#propStroke').value = stNone ? '#000000' : toHex(st);
+  $('#propStrokeW').value = S.getAttribute('stroke-width') ?? state.strokeWidth;
+  $('#propStrokeOp').value = String(S.getAttribute('stroke-opacity') ?? 1);
+  $('#propOpacity').value = String(S.getAttribute('opacity') ?? 1);
+
+  $('#propTextSec').classList.toggle('hidden', tg !== 'text');
+  if (tg === 'text') {
+    $('#propTextContent').value = [...S.querySelectorAll('tspan')].map(s => s.textContent).join('\n') || S.textContent || '';
+    $('#propFontSize').value = S.getAttribute('font-size') ?? state.fontSize;
+    $('#propFontWeight').value = S.getAttribute('font-weight') || '400';
+    $('#propFontFamily').value = S.getAttribute('font-family') || state.fontFamily;
+    $('#propAnchor').value = S.getAttribute('text-anchor') || 'start';
+    $('#propDir').value = S.getAttribute('direction') || 'rtl';
+  }
+
+  const isEd = !!editing && editing.elm === S;
+  $('#propPathSec').classList.toggle('hidden', !isEd);
+  if (isEd) {
+    $('#anchorCount').textContent = editing.anchors.length;
+    $('#anchorPointControls').classList.toggle('hidden', editing.sel < 0);
+    $('#btnToggleClose').textContent = editing.closed ? '🔓 فتح المسار (Open)' : '🔒 إغلاق المسار (Close)';
+  }
+}
+
+function applyProp(t) {
+  const id = t.id, v = (t.type === 'checkbox') ? t.checked : t.value;
+
+  if (id === 'artW' || id === 'artH') {
+    ART_W = Math.max(50, +$('#artW').value || 800);
+    ART_H = Math.max(50, +$('#artH').value || 600);
+    svgRoot.setAttribute('width', ART_W); svgRoot.setAttribute('height', ART_H);
+    svgRoot.setAttribute('viewBox', `0 0 ${ART_W} ${ART_H}`);
+    artboardBg.setAttribute('width', ART_W); artboardBg.setAttribute('height', ART_H);
+    scheduleCodeUpdate(); return;
+  }
+  if (id === 'artBgColor' || id === 'artBgTrans') {
+    artboardBg.setAttribute('fill', $('#artBgTrans').checked ? 'none' : $('#artBgColor').value);
+    scheduleCodeUpdate(); return;
+  }
+
+  if (id === 'defFill') state.fill = v;
+  if (id === 'defFillNone') state.fillNone = v;
+  if (id === 'defStroke') state.stroke = v;
+  if (id === 'defStrokeNone') state.strokeNone = v;
+  if (id === 'defStrokeW') state.strokeWidth = Math.max(0, +v || 0);
+  if (id === 'defOpacity') state.opacity = +v;
+  if (id === 'defFontSize') state.fontSize = Math.max(6, +v);
+  if (id === 'defFontFamily') state.fontFamily = v;
+
+  if (!selected) return;
+  const S = selected, tg = S.tagName.toLowerCase();
+
+  switch (id) {
+    case 'propX': case 'propY': {
+      const bb = getElemBBox(S);
+      const nx = +$('#propX').value || 0, ny = +$('#propY').value || 0;
+      moveElement(S, nx - bb.x, ny - bb.y);
+      break;
+    }
+    case 'propW':
+      if (tg === 'rect' || tg === 'image') S.setAttribute('width', Math.max(1, +v || 1));
+      if (tg === 'ellipse') S.setAttribute('rx', Math.max(1, (+v || 1) / 2));
+      break;
+    case 'propH':
+      if (tg === 'rect' || tg === 'image') S.setAttribute('height', Math.max(1, +v || 1));
+      if (tg === 'ellipse') S.setAttribute('ry', Math.max(1, (+v || 1) / 2));
+      break;
+    case 'propFill': S.setAttribute('fill', $('#propFillNone').checked ? 'none' : v); break;
+    case 'propFillNone': S.setAttribute('fill', v ? 'none' : $('#propFill').value); break;
+    case 'propFillOp': S.setAttribute('fill-opacity', v); break;
+    case 'propStroke': S.setAttribute('stroke', $('#propStrokeNone').checked ? 'none' : v); break;
+    case 'propStrokeNone': S.setAttribute('stroke', v ? 'none' : $('#propStroke').value); break;
+    case 'propStrokeW': S.setAttribute('stroke-width', Math.max(0, +v || 0)); break;
+    case 'propStrokeOp': S.setAttribute('stroke-opacity', v); break;
+    case 'propOpacity': S.setAttribute('opacity', v); break;
+    case 'propTextContent': updateTextContent(S, t.value); break;
+    case 'propFontSize': S.setAttribute('font-size', Math.max(6, +v)); break;
+    case 'propFontFamily': S.setAttribute('font-family', v); break;
+    case 'propFontWeight': S.setAttribute('font-weight', v); break;
+    case 'propAnchor': S.setAttribute('text-anchor', v); break;
+    case 'propDir': S.setAttribute('direction', v); break;
+  }
+  renderOverlay();
+  scheduleCodeUpdate();
+}
+
+$('#panelProps').addEventListener('input', e => applyProp(e.target));
+$('#panelProps').addEventListener('change', e => { applyProp(e.target); pushHist(); });
+
+$('#btnDel').onclick = () => { if (!selected) return; const s = selected; deselect(); s.remove(); pushHist(); };
+$('#btnDup').onclick = () => {
+  if (!selected) return;
+  const c = selected.cloneNode(true);
+  artwork.insertBefore(c, selected.nextSibling);
+  moveElement(c, 15, 15);
+  select(c); pushHist();
+};
+$('#btnFwd').onclick = () => { if (selected) moveLayer(selected, 1); };
+$('#btnBwd').onclick = () => { if (selected) moveLayer(selected, -1); };
+$('#btnUngroup').onclick = () => { if (selected) ungroupElement(selected); };
+$('#btnConvertToPath').onclick = () => { if (selected) convertToPath(selected); };
+
+$('#btnMakeSmooth').onclick = () => {
+  if (!editing || editing.sel < 0) return;
+  const a = editing.anchors[editing.sel], n = editing.anchors.length;
+  const prev = editing.anchors[(editing.sel - 1 + n) % n];
+  const next = editing.anchors[(editing.sel + 1) % n];
+  const dX = (next.x - prev.x) * 0.25, dY = (next.y - prev.y) * 0.25;
+  a.out = { x: a.x + dX, y: a.y + dY };
+  a.in = { x: a.x - dX, y: a.y - dY };
+  commitEdit(); renderProps(); pushHist();
+  toast('〰️ تم تحويل النقطة إلى منحنى ناعم');
+};
+
+$('#btnMakeCorner').onclick = () => {
+  if (!editing || editing.sel < 0) return;
+  const a = editing.anchors[editing.sel];
+  a.out = null; a.in = null;
+  commitEdit(); renderProps(); pushHist();
+  toast('📐 تم تحويل النقطة إلى زاوية حادة');
+};
+
+$('#btnDelAnchor').onclick = () => {
+  if (editing && editing.sel >= 0) deleteAnchorAt(editing.sel);
+};
+
+$('#btnToggleClose').onclick = () => {
+  if (editing) {
+    editing.closed = !editing.closed;
+    commitEdit(); renderProps(); pushHist();
+  }
+};
+
+/* ================= لوحة الطبقات ================= */
+function layerName(e) {
+  const t = e.tagName.toLowerCase();
+  if (t === 'g') return '🧩 مجموعة فيكتور (Traced Group)';
+  if (t === 'path') return '📈 مسار فيكتور (Path)';
+  if (t === 'rect') return '🟥 مستطيل (Rectangle)';
+  if (t === 'ellipse') return '🟢 دائرة / بيضاوي (Ellipse)';
+  if (t === 'line') return '📏 خط (Line)';
+  if (t === 'image') return '🖼️ صورة نقطية (Image)';
+  if (t === 'text') {
+    const s = (e.textContent || '').trim();
+    return '🔤 نص: ' + (s.length > 14 ? s.slice(0, 14) + '…' : (s || 'فارغ'));
+  }
+  return t;
+}
+
+const EYE_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+
+function moveLayer(elm, dir) {
+  if (dir > 0 && elm.nextSibling) artwork.insertBefore(elm, elm.nextSibling.nextSibling);
+  if (dir < 0 && elm.previousSibling) artwork.insertBefore(elm, elm.previousSibling);
+  pushHist(); renderLayers();
+}
+
+function renderLayers() {
+  const box = $('#layersList'); box.innerHTML = '';
+  const items = [...artwork.children];
+  if (!items.length) {
+    box.innerHTML = '<div class="text-xs text-muted p-4 text-center leading-relaxed">لا توجد طبقات بعد.<br>اختر أداة من الشريط الأيسر أو أدرج صورة للبدء!</div>';
+    return;
+  }
+  items.slice().reverse().forEach(elm => {
+    const row = document.createElement('div');
+    row.className = 'layer-row' + (elm === selected ? ' active' : '');
+
+    const mk = (html, title, fn) => {
+      const b = document.createElement('button');
+      b.className = 'lbtn'; b.title = title; b.innerHTML = html;
+      b.onclick = e => { e.stopPropagation(); fn(); };
+      row.appendChild(b);
+      return b;
+    };
+
+    const vis = mk(EYE_ICON, 'إظهار / إخفاء الطبقة', () => {
+      const hid = elm.style.display === 'none';
+      elm.style.display = hid ? '' : 'none';
+      vis.style.opacity = hid ? '1' : '.35';
+      pushHist();
+    });
+    vis.style.opacity = elm.style.display === 'none' ? '.35' : '1';
+
+    const name = document.createElement('span');
+    name.className = 'lname';
+    name.textContent = layerName(elm);
+    row.appendChild(name);
+
+    mk('↑', 'تقديم للأعلى', () => moveLayer(elm, 1));
+    mk('↓', 'تأخير للأسفل', () => moveLayer(elm, -1));
+    mk('✕', 'حذف الطبقة', () => {
+      if (selected === elm) deselect();
+      elm.remove(); pushHist();
+    });
+
+    row.onclick = () => {
+      select(elm);
+      switchRightTab('props');
+    };
+    row.draggable = true;
+    row.addEventListener('dragstart', e => { dragLayerElm = elm; e.dataTransfer.effectAllowed = 'move'; });
+    row.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragLayerElm && dragLayerElm !== elm) {
+        artwork.insertBefore(dragLayerElm, elm);
+        pushHist(); renderLayers();
+      }
+    });
+    box.appendChild(row);
+  });
+}
+
+/* ================= نظام التراجع والإعادة ================= */
+const histStack = [];
+let histIdx = -1;
+
+function pushHist() {
+  if (suppress) return;
+  histStack.splice(histIdx + 1);
+  histStack.push(artwork.innerHTML);
+  if (histStack.length > 80) histStack.shift();
+  histIdx = histStack.length - 1;
+  updateHistBtns();
+  scheduleCodeUpdate();
+  notifyParent('VECTOR_STUDIO_CHANGE', { layerCount: artwork.children.length });
+}
+function pushHistIfChanged() {
+  if (histStack[histIdx] !== artwork.innerHTML) pushHist();
+}
+function undo() {
+  if (histIdx <= 0) return;
+  suppress = true; histIdx--; artwork.innerHTML = histStack[histIdx]; suppress = false;
+  deselect(); refreshAll(); updateHistBtns();
+}
+function redo() {
+  if (histIdx >= histStack.length - 1) return;
+  suppress = true; histIdx++; artwork.innerHTML = histStack[histIdx]; suppress = false;
+  deselect(); refreshAll(); updateHistBtns();
+}
+function updateHistBtns() {
+  $('#btnUndo').disabled = (histIdx <= 0);
+  $('#btnRedo').disabled = (histIdx >= histStack.length - 1);
+}
+
+/* ================= محرر كود SVG ================= */
+const codeTa = $('#codeEditor');
+let codeTimer = null;
+
+function getSVGCode() {
+  let inner = '';
+  artwork.childNodes.forEach(n => {
+    if (n.nodeType === 1) inner += '  ' + n.outerHTML + '\n';
+  });
+  const bgFill = artboardBg.getAttribute('fill') || '#ffffff';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${ART_W}" height="${ART_H}" viewBox="0 0 ${ART_W} ${ART_H}">\n  <rect width="100%" height="100%" fill="${bgFill}"/>\n${inner}</svg>`;
+}
+
+function updateCodeNow() {
+  if (document.activeElement !== codeTa) codeTa.value = getSVGCode();
+}
+function scheduleCodeUpdate() {
+  clearTimeout(codeTimer);
+  codeTimer = setTimeout(updateCodeNow, 350);
+}
+function refreshAll() { renderLayers(); updateCodeNow(); }
+
+function sanitize(root) {
+  root.querySelectorAll('script,foreignObject').forEach(n => n.remove());
+  root.querySelectorAll('*').forEach(n => {
+    [...n.attributes].forEach(a => { if (/^on/i.test(a.name)) n.removeAttribute(a.name); });
+  });
+}
+
+function replaceArtworkFromSVG(svg) {
+  suppress = true;
+  artwork.innerHTML = '';
+  const vb = svg.getAttribute('viewBox');
+  if (vb) {
+    const parts = vb.trim().split(/[\s,]+/).map(Number);
+    if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
+      ART_W = parts[2]; ART_H = parts[3];
+      $('#artW').value = ART_W; $('#artH').value = ART_H;
+      svgRoot.setAttribute('width', ART_W); svgRoot.setAttribute('height', ART_H);
+      svgRoot.setAttribute('viewBox', `0 0 ${ART_W} ${ART_H}`);
+      artboardBg.setAttribute('width', ART_W); artboardBg.setAttribute('height', ART_H);
+    }
+  }
+  [...svg.childNodes].forEach(n => {
+    if (n.nodeType !== 1) return;
+    const tg = (n.tagName || '').toLowerCase();
+    if (tg === 'script' || tg === 'foreignobject') return;
+    if (tg === 'rect' && n.getAttribute('width') === '100%' && n.getAttribute('height') === '100%') return;
+    artwork.appendChild(document.importNode(n, true));
+  });
+  sanitize(artwork);
+  suppress = false;
+  deselect();
+  pushHist();
+  refreshAll();
+  fitView();
+}
+
+function applyCodeFromEditor() {
+  const doc = new DOMParser().parseFromString(codeTa.value, 'image/svg+xml');
+  if (doc.querySelector('parsererror')) {
+    toast('⚠️ شفرة SVG غير صالحة'); return;
+  }
+  const s = doc.querySelector('svg');
+  if (!s) { toast('⚠️ لم يتم العثور على وسم <svg>'); return; }
+  replaceArtworkFromSVG(s);
+  toast('✅ تم تطبيق التعديلات بنجاح');
+}
+$('#btnApplyCode').onclick = applyCodeFromEditor;
+
+/* ================= الحفظ والتصدير ================= */
+function download(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+
+$('#btnSave').onclick = () => {
+  download(new Blob([getSVGCode()], { type: 'image/svg+xml;charset=utf-8' }), 'vector-studio.svg');
+  toast('💾 تم حفظ الملف بصيغة SVG');
+};
+
+function getPNGDataURL(scale = 2) {
+  return new Promise((res, rej) => {
+    const svgData = getSVGCode();
+    const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = ART_W * scale; c.height = ART_H * scale;
+      const ctx = c.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.drawImage(im, 0, 0);
+      res(c.toDataURL('image/png'));
+    };
+    im.onerror = rej;
+    im.src = url;
+  });
+}
+
+async function exportPNG() {
+  try {
+    const dataUrl = await getPNGDataURL(2);
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    download(blob, 'vector-studio-art.png');
+    toast('🖼️ تم تصدير صورة فائقة الجودة PNG (2x)');
+  } catch (err) {
+    toast('❌ حدث خطأ أثناء تصدير الصورة');
+  }
+}
+$('#btnPng').onclick = exportPNG;
+
+$('#btnParentExport').onclick = async () => {
+  const format = $('#parentExportFormat').value;
+  if (window.parent === window && !window.opener) {
+    if (format === 'svg') {
+      download(new Blob([getSVGCode()], { type: 'image/svg+xml;charset=utf-8' }), 'vector-studio.svg');
+    } else {
+      try {
+        const response = await fetch(await getPNGDataURL(2));
+        download(await response.blob(), 'vector-studio-art.png');
+      } catch (err) {
+        console.error('Vector Studio export failed:', err);
+        toast('❌ تعذر تصدير التصميم');
+        return;
+      }
+    }
+    toast('📥 تم حفظ التصميم');
+    return;
+  }
+
+  try {
+    await sendExportToParent(format, 2, true);
+    toast('✅ تم إرسال التصميم؛ سيغلق المحرر بعد استلامه');
+    if (window.opener) setTimeout(() => window.close(), 250);
+  } catch (err) {
+    console.error('Vector Studio parent export failed:', err);
+    notifyParent('VECTOR_STUDIO_EXPORT_ERROR', { format, message: err.message });
+    toast('❌ تعذر إرسال التصميم إلى التطبيق الأب');
+  }
+};
+
+$('#btnCopy').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(getSVGCode());
+    toast('📋 تم نسخ شفرة SVG إلى الحافظة');
+  } catch (err) {
+    toast('❌ تعذر النسخ للحافظة');
+  }
+};
+
+$('#btnOpen').onclick = () => $('#fileOpen').click();
+$('#fileOpen').addEventListener('change', e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const doc = new DOMParser().parseFromString(rd.result, 'image/svg+xml');
+    const s = doc.querySelector('svg');
+    if (!s || doc.querySelector('parsererror')) { toast('⚠️ ملف SVG غير صالح'); return; }
+    replaceArtworkFromSVG(s);
+    toast('📂 تم فتح الملف بنجاح');
+  };
+  rd.readAsText(f);
+});
+
+function clearAll(silent = false) {
+  if (!artwork.children.length) return;
+  if (silent || confirm('🗑️ هل أنت متأكد من مسح جميع عناصر اللوحة؟')) {
+    suppress = true; artwork.innerHTML = ''; suppress = false;
+    deselect(); pushHist();
+  }
+}
+$('#btnNew').onclick = () => clearAll(false);
+$('#btnClear').onclick = () => clearAll(false);
+$('#btnUndo').onclick = undo;
+$('#btnRedo').onclick = redo;
+
+/* ================= تحويل الصور إلى فيكتور (Vector Trace) ================= */
+function loadImage(file) {
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = rej;
+    im.src = URL.createObjectURL(file);
+  });
+}
+
+function kmeans(px, alpha, k) {
+  const idx = [];
+  for (let i = 0; i < alpha.length; i++) if (alpha[i] >= 100) idx.push(i);
+  if (!idx.length) idx.push(0);
+  const m = Math.min(idx.length, 3000), step = idx.length / m;
+  const samp = [];
+  for (let i = 0; i < m; i++) {
+    const j = idx[Math.floor(i * step)];
+    samp.push([px[j * 3], px[j * 3 + 1], px[j * 3 + 2]]);
+  }
+  const C = [];
+  for (let i = 0; i < k; i++) {
+    const s = samp[Math.floor(i * samp.length / k)];
+    C.push([s[0], s[1], s[2]]);
+  }
+  for (let it = 0; it < 12; it++) {
+    const S = C.map(() => [0, 0, 0, 0]);
+    for (const p of samp) {
+      let bi = 0, bd = Infinity;
+      for (let c = 0; c < k; c++) {
+        const dx = p[0] - C[c][0], dy = p[1] - C[c][1], dz = p[2] - C[c][2];
+        const d = dx * dx + dy * dy + dz * dz;
+        if (d < bd) { bd = d; bi = c; }
+      }
+      S[bi][0] += p[0]; S[bi][1] += p[1]; S[bi][2] += p[2]; S[bi][3]++;
+    }
+    for (let c = 0; c < k; c++) {
+      if (S[c][3]) {
+        C[c][0] = S[c][0] / S[c][3];
+        C[c][1] = S[c][1] / S[c][3];
+        C[c][2] = S[c][2] / S[c][3];
+      }
+    }
+  }
+  return C.map(c => [Math.round(c[0]), Math.round(c[1]), Math.round(c[2])]);
+}
+
+function marchingSquares(mask, w, h) {
+  const get = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? 0 : mask[y * w + x];
+  const P = {
+    T: (i, j) => [i + 0.5, j],
+    R: (i, j) => [i + 1, j + 0.5],
+    B: (i, j) => [i + 0.5, j + 1],
+    L: (i, j) => [i, j + 0.5]
+  };
+  const table = {
+    1: [['L', 'B']], 2: [['B', 'R']], 3: [['L', 'R']], 4: [['T', 'R']],
+    5: [['T', 'R'], ['L', 'B']], 6: [['T', 'B']], 7: [['T', 'L']], 8: [['L', 'T']],
+    9: [['T', 'B']], 10: [['T', 'L'], ['B', 'R']], 11: [['T', 'R']], 12: [['L', 'R']],
+    13: [['B', 'R']], 14: [['L', 'B']]
+  };
+  const raw = [];
+  for (let j = -1; j < h; j++) {
+    for (let i = -1; i < w; i++) {
+      const tl = get(i, j), tr = get(i + 1, j), br = get(i + 1, j + 1), bl = get(i, j + 1);
+      const c = (tl ? 8 : 0) | (tr ? 4 : 0) | (br ? 2 : 0) | (bl ? 1 : 0);
+      if (c === 0 || c === 15) continue;
+      for (const pr of table[c]) raw.push([P[pr[0]](i, j), P[pr[1]](i, j)]);
+    }
+  }
+  const key = p => (p[0] * 2) + ',' + (p[1] * 2);
+  const adj = new Map();
+  raw.forEach((s, idx) => {
+    const k1 = key(s[0]), k2 = key(s[1]);
+    if (!adj.has(k1)) adj.set(k1, []);
+    if (!adj.has(k2)) adj.set(k2, []);
+    adj.get(k1).push({ p: s[1], idx: idx });
+    adj.get(k2).push({ p: s[0], idx: idx });
+  });
+
+  const used = new Array(raw.length).fill(false);
+  const loops = [];
+  for (let s0 = 0; s0 < raw.length; s0++) {
+    if (used[s0]) continue;
+    used[s0] = true;
+    const loop = [raw[s0][0], raw[s0][1]];
+    let ext = true;
+    while (ext) {
+      ext = false;
+      const tail = loop[loop.length - 1], nbs = adj.get(key(tail)) || [];
+      for (const nb of nbs) {
+        if (!used[nb.idx]) { used[nb.idx] = true; loop.push(nb.p); ext = true; break; }
+      }
+    }
+    ext = true;
+    while (ext) {
+      ext = false;
+      const head = loop[0], nbs = adj.get(key(head)) || [];
+      for (const nb of nbs) {
+        if (!used[nb.idx]) { used[nb.idx] = true; loop.unshift(nb.p); ext = true; break; }
+      }
+    }
+    loops.push(loop);
+  }
+  return loops;
+}
+
+function dpR(pts, eps) {
+  if (pts.length <= 2) return pts;
+  const A = pts[0], B = pts[pts.length - 1];
+  let mi = -1, md = -1;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const dx = B[0] - A[0], dy = B[1] - A[1], L = Math.hypot(dx, dy) || 1;
+    const d = Math.abs(dy * pts[i][0] - dx * pts[i][1] + B[0] * A[1] - B[1] * A[0]) / L;
+    if (d > md) { md = d; mi = i; }
+  }
+  if (md > eps) {
+    const l = dpR(pts.slice(0, mi + 1), eps), r = dpR(pts.slice(mi), eps);
+    return l.slice(0, -1).concat(r);
+  }
+  return [A, B];
+}
+
+function simplifyClosed(pts, eps) {
+  if (pts.length < 8) return pts;
+  let bi = 0, bd = -1;
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i][0] - pts[0][0], dy = pts[i][1] - pts[0][1], d = dx * dx + dy * dy;
+    if (d > bd) { bd = d; bi = i; }
+  }
+  const p1 = dpR(pts.slice(0, bi + 1), eps);
+  const p2 = dpR(pts.slice(bi).concat([pts[0]]), eps);
+  return p1.slice(0, -1).concat(p2.slice(0, -1));
+}
+
+function traceImage(img, k, eps, ignoreWhite) {
+  const MAX = 150;
+  let w = img.naturalWidth, h = img.naturalHeight;
+  if (!w || !h) throw new Error('صورة غير صالحة');
+  const sc0 = Math.min(1, MAX / Math.max(w, h));
+  w = Math.max(2, Math.round(w * sc0)); h = Math.max(2, Math.round(h * sc0));
+
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(img, 0, 0, w, h);
+  const data = cx.getImageData(0, 0, w, h).data;
+  const N = w * h;
+  const px = new Float32Array(N * 3), alpha = new Uint8Array(N);
+
+  for (let i = 0, j = 0; i < N; i++, j += 4) {
+    px[i * 3] = data[j]; px[i * 3 + 1] = data[j + 1]; px[i * 3 + 2] = data[j + 2];
+    alpha[i] = data[j + 3];
+  }
+
+  const centers = kmeans(px, alpha, k);
+  const labels = new Uint8Array(N);
+
+  for (let i = 0; i < N; i++) {
+    if (alpha[i] < 100) { labels[i] = 255; continue; }
+    let bi = 0, bd = Infinity;
+    for (let c = 0; c < centers.length; c++) {
+      const dx = px[i * 3] - centers[c][0], dy = px[i * 3 + 1] - centers[c][1], dz = px[i * 3 + 2] - centers[c][2];
+      const d = dx * dx + dy * dy + dz * dz;
+      if (d < bd) { bd = d; bi = c; }
+    }
+    labels[i] = bi;
+  }
+
+  const layers = [];
+  for (let c = 0; c < centers.length; c++) {
+    const col = centers[c];
+    if (ignoreWhite && col[0] > 238 && col[1] > 238 && col[2] > 238) continue;
+    const mask = new Uint8Array(N);
+    for (let i = 0; i < N; i++) if (labels[i] === c) mask[i] = 1;
+    const loops = marchingSquares(mask, w, h);
+    if (loops.length) layers.push({ color: col, loops: loops });
+  }
+  return { layers: layers, w: w, h: h, eps: eps };
+}
+
+function addTraced(res) {
+  const g = el('g', { class: 'traced-image' });
+  const target = Math.min(ART_W, ART_H) * 0.75;
+  const sc = Math.min(target / res.w, target / res.h);
+  const ox = (ART_W - res.w * sc) / 2, oy = (ART_H - res.h * sc) / 2;
+  let count = 0;
+
+  res.layers.forEach(L => {
+    const paths = [];
+    L.loops.forEach(loop => {
+      if (loop.length < 8) return;
+      const pts = simplifyClosed(loop, res.eps);
+      if (pts.length < 3) return;
+      let d = `M ${fmt(ox + pts[0][0] * sc)} ${fmt(oy + pts[0][1] * sc)} `;
+      for (let i = 1; i < pts.length; i++) d += `L ${fmt(ox + pts[i][0] * sc)} ${fmt(oy + pts[i][1] * sc)} `;
+      d += 'Z';
+      paths.push({ d: d, len: pts.length });
+    });
+    paths.sort((a, b) => b.len - a.len);
+    paths.forEach(p => {
+      g.appendChild(el('path', {
+        d: p.d,
+        fill: `rgb(${L.color[0]},${L.color[1]},${L.color[2]})`,
+        stroke: 'none'
+      }));
+      count++;
+    });
+  });
+
+  if (!count) throw new Error('لم يتم العثور على أشكال واضحة، جرّب خيارات أخرى');
+  artwork.appendChild(g);
+  select(g);
+  pushHist();
+  renderLayers();
+  return count;
+}
+
+/* ربط نافذة Trace Modal */
+$$('.open-trace').forEach(b => b.addEventListener('click', () => $('#traceModal').classList.remove('hidden')));
+const closeTrace = () => $('#traceModal').classList.add('hidden');
+$('#traceClose').onclick = closeTrace;
+$('#traceCancel').onclick = closeTrace;
+
+$('#traceFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  $('#traceFileLabel').textContent = f.name;
+  const im = new Image();
+  im.onload = () => {
+    const pv = $('#tracePreview');
+    pv.src = im.src; pv.classList.remove('hidden');
+  };
+  im.src = URL.createObjectURL(f);
+});
+
+$('#traceColors').addEventListener('input', e => $('#colorsVal').textContent = e.target.value);
+$('#traceDetail').addEventListener('input', e => $('#detailVal').textContent = e.target.value);
+
+$('#traceRun').onclick = async () => {
+  const f = $('#traceFile').files[0];
+  if (!f) { toast('⚠️ الرجاء اختيار صورة أولاً'); return; }
+  $('#traceProgress').classList.remove('hidden');
+  $('#traceRun').disabled = true;
+
+  try {
+    const img = await loadImage(f);
+    await new Promise(r => setTimeout(r, 40));
+    const res = traceImage(img, +$('#traceColors').value, +$('#traceDetail').value, $('#traceIgnoreWhite').checked);
+    const n = addTraced(res);
+    toast(`✅ تم تحويل الصورة بنجاح إلى ${n} مسار فيكتور`);
+    closeTrace();
+  } catch (err) {
+    console.error(err);
+    toast('❌ فشل التحويل: ' + err.message);
+  }
+  $('#traceProgress').classList.add('hidden');
+  $('#traceRun').disabled = false;
+};
+
+/* ================= تبديل الأدوات وتحديث الإرشادات ================= */
+function setTool(t) {
+  const prev = state.tool;
+  state.tool = t;
+  if (prev !== t && prev === 'pen') cancelPen();
+  editing = null;
+  $$('.tool-btn[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
+  setToolCursor();
+  $('#hintBar').innerHTML = HINTS[t] || '';
+
+  if (t === 'direct' && selected && isPath(selected)) {
+    startEdit(selected);
+  } else {
+    renderOverlay();
+  }
+  renderProps();
+}
+$$('.tool-btn[data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+
+/* ================= أحداث الفأرة واللمس ================= */
+viewport.addEventListener('pointerdown', e => {
+  if (e.button === 1 || state.space || state.tool === 'hand') {
+    drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, ox: state.panX, oy: state.panY };
+    viewport.style.cursor = 'grabbing';
+    viewport.setPointerCapture(e.pointerId);
+    return;
+  }
+  if (e.button !== 0) return;
+  e.preventDefault();
+
+  const resizeHandle = e.target.closest?.('[data-resize-handle]');
+  if (state.tool === 'select' && selected && resizeHandle) {
+    drag = {
+      kind: 'resize-el',
+      elm: selected,
+      corner: Number(resizeHandle.getAttribute('data-resize-handle')),
+      startBounds: getElemBBox(selected),
+      originalTransform: selected.getAttribute('transform') || ''
+    };
+    dragging = true;
+    viewport.setPointerCapture(e.pointerId);
+    return;
+  }
+
+  const p = screenToWorld(e);
+  const hit = targetElement(e.target, state.tool === 'direct');
+
+  switch (state.tool) {
+    case 'select':
+      if (hit) {
+        select(hit);
+        drag = { kind: 'move-el', elm: hit, last: p };
+      } else {
+        deselect();
+      }
+      break;
+
+    case 'direct':
+      if (editing) {
+        const h = editHit(p);
+        if (h && h.type === 'handle') {
+          editing.sel = h.i;
+          drag = { kind: 'handle', i: h.i, side: h.side };
+          renderPathEditor();
+          renderProps();
+        } else if (h && h.type === 'anchor') {
+          editing.sel = h.i;
+          if (e.altKey) {
+            drag = { kind: 'pull-handles', i: h.i, start: p };
+          } else {
+            drag = { kind: 'anchor', i: h.i, startAnchor: { ...editing.anchors[h.i] } };
+          }
+          renderPathEditor();
+          renderProps();
+        } else if (h && h.type === 'stroke') {
+          splitSegment(h.i, h.t);
+        } else if (hit && isPath(hit)) {
+          select(hit);
+          startEdit(hit);
+        } else {
+          deselect();
+        }
+      } else if (hit && isPath(hit)) {
+        select(hit);
+        startEdit(hit);
+      } else if (hit) {
+        select(hit);
+      } else {
+        deselect();
+      }
+      break;
+
+    case 'pen':
+      penDown(p);
+      break;
+
+    case 'rect': case 'ellipse': case 'line': {
+      const s = makeShape(state.tool, p);
+      artwork.appendChild(s);
+      select(s);
+      drag = { kind: 'shape', shape: state.tool, elm: s, start: p };
+      break;
+    }
+
+    case 'text':
+      if (hit && hit.tagName.toLowerCase() === 'text') {
+        select(hit);
+        openTextEditor(hit);
+      } else {
+        if (hit) deselect();
+        createText(p);
+      }
+      return;
+  }
+
+  if (drag) {
+    dragging = true;
+    viewport.setPointerCapture(e.pointerId);
+  }
+});
+
+viewport.addEventListener('pointermove', e => {
+  const p = screenToWorld(e);
+
+  if (!drag) {
+    if (state.tool === 'pen' && penPts.length) {
+      updatePenTmp(p);
+    } else if (state.tool === 'direct' && editing) {
+      const near = nearestOnPath(editing, p);
+      if (near && Math.sqrt(near.d) < 11 / state.zoom) {
+        viewport.style.cursor = 'copy';
+      } else {
+        setToolCursor();
+      }
+    }
+    return;
+  }
+
+  switch (drag.kind) {
+    case 'pan':
+      state.panX = drag.ox + e.clientX - drag.sx;
+      state.panY = drag.oy + e.clientY - drag.sy;
+      applyView();
+      break;
+
+    case 'move-el':
+      moveElement(drag.elm, p.x - drag.last.x, p.y - drag.last.y);
+      drag.last = p;
+      renderOverlay();
+      break;
+
+    case 'resize-el':
+      resizeElement(drag.elm, drag.startBounds, drag.corner, p, drag.originalTransform);
+      renderOverlay();
+      break;
+
+    case 'shape':
+      updateShape(drag, p);
+      renderOverlay();
+      break;
+
+    case 'pen-drag': {
+      const a = drag.anchor;
+      const dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+      a.out = { x: a.x + dx, y: a.y + dy };
+      a.in = { x: a.x - dx, y: a.y - dy };
+      updatePenTmp(p);
+      break;
+    }
+
+    case 'anchor': {
+      const a = editing.anchors[drag.i];
+      const dx = p.x - a.x, dy = p.y - a.y;
+      a.x = p.x; a.y = p.y;
+      if (a.in) { a.in.x += dx; a.in.y += dy; }
+      if (a.out) { a.out.x += dx; a.out.y += dy; }
+      commitEdit();
+      break;
+    }
+
+    case 'handle': {
+      const a = editing.anchors[drag.i];
+      const otherSide = (drag.side === 'out') ? 'in' : 'out';
+      const canOther = editing.closed || (drag.side === 'out' ? drag.i > 0 : drag.i < editing.anchors.length - 1);
+
+      a[drag.side] = { x: p.x, y: p.y };
+
+      if (!e.altKey && a[otherSide] && canOther) {
+        const dx = p.x - a.x, dy = p.y - a.y;
+        const currentOtherDist = dist(a.x, a.y, a[otherSide].x, a[otherSide].y) || Math.hypot(dx, dy);
+        const len = Math.hypot(dx, dy) || 1;
+        a[otherSide] = {
+          x: a.x - (dx / len) * currentOtherDist,
+          y: a.y - (dy / len) * currentOtherDist
+        };
+      }
+      commitEdit();
+      break;
+    }
+
+    case 'pull-handles': {
+      const a = editing.anchors[drag.i];
+      const dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+      a.out = { x: a.x + dx, y: a.y + dy };
+      a.in = { x: a.x - dx, y: a.y - dy };
+      commitEdit();
+      break;
+    }
+  }
+});
+
+function endDrag() {
+  if (!drag) return;
+
+  if (drag.kind === 'shape') {
+    const s = drag.elm;
+    let bb = { width: 0, height: 0 };
+    try { bb = s.getBBox(); } catch (err) {}
+    if (bb.width < 2 && bb.height < 2) {
+      s.remove(); deselect();
+    }
+  }
+
+  if (drag.kind === 'pan') {
+    setToolCursor();
+  } else {
+    pushHistIfChanged();
+  }
+
+  drag = null;
+  dragging = false;
+  renderLayers();
+  renderProps();
+  scheduleCodeUpdate();
+}
+
+viewport.addEventListener('pointerup', endDrag);
+viewport.addEventListener('pointercancel', endDrag);
+
+viewport.addEventListener('dblclick', e => {
+  if (state.tool === 'pen') {
+    finishPen(false);
+    return;
+  }
+  const hit = targetElement(e.target, false);
+  if (hit && hit.tagName.toLowerCase() === 'text') {
+    openTextEditor(hit);
+  } else if (hit && hit.tagName.toLowerCase() === 'image') {
+    openCropTool(hit);
+  }
+});
+
+viewport.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (editing) {
+    const h = editHit(screenToWorld(e));
+    if (h && h.type === 'anchor') deleteAnchorAt(h.i);
+  }
+});
+
+viewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (e.ctrlKey || e.metaKey) {
+    zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1 / 1.15);
+  } else {
+    state.panX -= e.deltaX;
+    state.panY -= e.deltaY;
+    applyView();
+  }
+}, { passive: false });
+
+/* ================= اختصارات لوحة المفاتيح ================= */
+document.addEventListener('keydown', e => {
+  const tg = (e.target.tagName || '').toUpperCase();
+  if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') {
+    if (e.key === 'Escape') e.target.blur();
+    return;
+  }
+
+  if (e.code === 'Space' && !e.repeat) {
+    state.space = true;
+    setToolCursor();
+    e.preventDefault();
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    if (!$('#infoModal').classList.contains('hidden')) { $('#infoModal').classList.add('hidden'); return; }
+    if (!$('#cropModal').classList.contains('hidden')) { $('#cropModal').classList.add('hidden'); return; }
+    if (!$('#removeBgModal').classList.contains('hidden')) { $('#removeBgModal').classList.add('hidden'); return; }
+    if (!$('#traceModal').classList.contains('hidden')) { $('#traceModal').classList.add('hidden'); return; }
+    if (penActive) cancelPen();
+    else if (editing) { editing = null; renderOverlay(); renderProps(); }
+    else deselect();
+    return;
+  }
+
+  if (e.ctrlKey || e.metaKey) {
+    const k = e.key.toLowerCase();
+    if (k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if (k === 'y') { e.preventDefault(); redo(); return; }
+    if (k === 's') { e.preventDefault(); $('#btnSave').click(); return; }
+    if (k === '0') { e.preventDefault(); fitView(); return; }
+    if (k === 'Enter' && penActive) { finishPen(false); return; }
+    return;
+  }
+
+  if (e.key === 'Enter' && penActive) { finishPen(false); return; }
+
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (editing && editing.sel >= 0) {
+      deleteAnchorAt(editing.sel);
+    } else if (selected) {
+      const s = selected;
+      deselect();
+      s.remove();
+      pushHist();
+    }
+    e.preventDefault();
+    return;
+  }
+
+  const map = { v: 'select', a: 'direct', h: 'hand', p: 'pen', r: 'rect', e: 'ellipse', l: 'line', t: 'text' };
+  const toolName = map[e.key.toLowerCase()];
+  if (toolName) setTool(toolName);
+});
+
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space') {
+    state.space = false;
+    setToolCursor();
+  }
+});
+window.addEventListener('blur', () => { state.space = false; });
+
+/* ================= أزرار التكبير ================= */
+$('#zoomIn').onclick = () => setZoomCenter(state.zoom * 1.25);
+$('#zoomOut').onclick = () => setZoomCenter(state.zoom / 1.25);
+$('#zoomFit').onclick = fitView;
+$('#zoom100').onclick = () => setZoomCenter(1);
+
+/* ================= المزامنة الحية ================= */
+const mo = new MutationObserver(() => {
+  if (suppress) return;
+  if (dragging) { scheduleCodeUpdate(); return; }
+  renderLayers();
+  scheduleCodeUpdate();
+});
+mo.observe(artwork, { childList: true, subtree: true, attributes: true, characterData: true });
+
+/* ================= التهيئة الأولية ================= */
+renderLayers();
+renderProps();
+updateCodeNow();
+pushHist();
+fitView();
+let previousViewportSize = viewport.getBoundingClientRect();
+new ResizeObserver(() => {
+  const { width, height } = viewport.getBoundingClientRect();
+  if (width === previousViewportSize.width && height === previousViewportSize.height) return;
+  const previousFit = clamp(
+    Math.min((previousViewportSize.width - 100) / ART_W, (previousViewportSize.height - 100) / ART_H),
+    0.05, 5
+  );
+  if (Math.abs(state.zoom - previousFit) < 0.001) {
+    fitView();
+  } else {
+    state.panX += (width - previousViewportSize.width) / 2;
+    state.panY += (height - previousViewportSize.height) / 2;
+    applyView();
+  }
+  previousViewportSize = { width, height };
+}).observe(viewport);
+updateHistBtns();
+setToolCursor();
+$('#hintBar').innerHTML = HINTS.select;
+console.log('Vector Studio Ready 🚀 — تم دمج أدوات Crop و Remove Background ونظام postMessage بنجاح');
+</script>
+</body>
+</html>

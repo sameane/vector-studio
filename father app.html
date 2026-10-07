@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vector Studio — منصة اختبار التكامل (postMessage Test Suite)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        darkBg: '#090b0e',
+        panel: '#13161c',
+        panel2: '#1a1e27',
+        line: '#272d3b',
+        accent: '#4c8dff',
+        accentHov: '#3b7cf0',
+        success: '#10b981',
+        danger: '#ef4444'
+      },
+      fontFamily: {
+        sans: ['Cairo', 'Tahoma', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Consolas', 'monospace']
+      }
+    }
+  }
+};
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{font-family:'Cairo',Tahoma,sans-serif;background:#090b0e;color:#e8ebf2}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:#2b3242;border-radius:3px}
+::-webkit-scrollbar-track{background:transparent}
+
+.inp{width:100%;background:#0d0f14;border:1px solid #272d3b;border-radius:7px;color:#e8ebf2;padding:6px 10px;font-size:12px;outline:none;transition:border-color .15s}
+.inp:focus{border-color:#4c8dff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#202531;border:1px solid #2e3646;color:#e8ebf2;padding:6px 11px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn:hover{background:#2a3142;border-color:#3f4a5e}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:#4c8dff;border-color:#4c8dff;color:#fff}
+.btn-primary:hover{background:#3b7cf0;border-color:#3b7cf0}
+.card{background:#13161c;border:1px solid #272d3b;border-radius:12px;padding:14px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:9999px;font-size:11px;font-weight:700}
+</style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-xs">
+
+  <!-- ======= الشريط العلوي للتطبيق الحاضن ======= -->
+  <header class="h-14 shrink-0 bg-panel border-b border-line flex items-center justify-between px-4">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-accent/20 border border-accent/40 flex items-center justify-center text-accent font-black text-sm">
+        API
+      </div>
+      <div>
+        <h1 class="font-extrabold text-sm text-white flex items-center gap-2">
+          منصة اختبار تكامل Vector Studio
+          <span class="text-[10px] text-accent bg-accent/15 px-1.5 py-0.5 rounded font-mono">v2.5</span>
+        </h1>
+        <p class="text-[10.5px] text-slate-400">تطبيق تجريبي لمحاكاة بيئة العمل الخارجية وتبادل البيانات عبر postMessage</p>
+      </div>
+    </div>
+
+    <!-- مؤشر حالة الاتصال -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 bg-panel2 px-3 py-1.5 rounded-lg border border-line">
+        <span class="text-slate-400">مسار الاستوديو:</span>
+        <input id="studioUrlInp" type="text" class="inp py-0.5 px-2 w-48 text-[11px] font-mono" value="vector-studio.html">
+        <button id="btnReloadIframe" class="btn py-0.5 px-2 text-[11px]" title="إعادة تحميل الـ iframe">🔄 تحديث</button>
+      </div>
+
+      <div id="statusBadge" class="badge bg-red-500/15 text-red-400 border border-red-500/30">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+        بانتظار إشارة الجاهزية...
+      </div>
+    </div>
+  </header>
+
+  <!-- ======= منطقة العمل مقسمة (لوحة التحكم + الـ iframe) ======= -->
+  <div class="flex-1 flex min-h-0">
+
+    <!-- اللوحة الجانبية لاختبار الأوامر والرسائل -->
+    <aside class="w-[440px] shrink-0 border-l border-line flex flex-col min-h-0 bg-darkBg">
+      
+      <!-- شريط تبويبات الاختبارات -->
+      <div class="flex items-center border-b border-line bg-panel shrink-0 px-2 pt-1.5 gap-1">
+        <button class="test-tab-btn flex-1 py-2 text-center font-bold border-b-2 border-accent text-white" data-target="tabTests">🧪 أدوات الاختبار</button>
+        <button class="test-tab-btn flex-1 py-2 text-center font-bold border-b-2 border-transparent text-slate-400 hover:text-white" data-target="tabLogs">📟 سجل الأحداث المباشر</button>
+        <button class="test-tab-btn flex-1 py-2 text-center font-bold border-b-2 border-transparent text-slate-400 hover:text-white" data-target="tabResults">🖼️ نتائج التصدير</button>
+      </div>
+
+      <!-- محتوى تبويب أدوات الاختبار -->
+      <div id="tabTests" class="flex-1 overflow-y-auto p-3 space-y-3.5">
+        
+        <!-- 1. إرسال صورة عادية -->
+        <div class="card space-y-2.5">
+          <div class="flex items-center justify-between border-b border-line pb-1.5">
+            <span class="font-bold text-slate-200 flex items-center gap-1.5"><span>🖼️</span> إرسال صورة (IMPORT_IMAGE)</span>
+            <span class="text-[10px] text-accent font-mono">POST</span>
+          </div>
+          <p class="text-slate-400 text-[11px] leading-relaxed">إرسال صورة عادية للوحة الرسم برابط خارجي أو من ملفات جهازك دون تحويلها لفكتور.</p>
+          <div class="space-y-2">
+            <div class="flex gap-2">
+              <input id="imgUrlInp" type="text" class="inp font-mono text-[11px]" placeholder="رابط الصورة (URL أو Base64)" value="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80">
+              <button id="btnSendImgUrl" class="btn btn-primary shrink-0">إرسال الرابط</button>
+            </div>
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-slate-400 text-[11px]">أو اختر صورة من جهازك:</span>
+              <input type="file" id="fileInpHost" accept="image/*" class="hidden">
+              <button id="btnPickHostFile" class="btn text-accent2 border-accent/30 hover:bg-accent/15">📁 رفع وإرسال صورة</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. إرسال كود SVG -->
+        <div class="card space-y-2.5">
+          <div class="flex items-center justify-between border-b border-line pb-1.5">
+            <span class="font-bold text-slate-200 flex items-center gap-1.5"><span>📐</span> إرسال كود SVG (IMPORT_SVG)</span>
+            <span class="text-[10px] text-accent font-mono">POST</span>
+          </div>
+          <p class="text-slate-400 text-[11px]">استبدال عناصر اللوحة برسم متجهي كامل عبر إرسال كود SVG نصي.</p>
+          <div class="flex gap-1.5 mb-1.5">
+            <button class="svg-preset-btn btn text-[11px] flex-1 py-1" data-preset="star">⭐ نجمة</button>
+            <button class="svg-preset-btn btn text-[11px] flex-1 py-1" data-preset="badge">🛡️ درع</button>
+            <button class="svg-preset-btn btn text-[11px] flex-1 py-1" data-preset="heart">❤️ قلب</button>
+          </div>
+          <textarea id="svgCodeInp" dir="ltr" rows="3" class="inp font-mono text-[10.5px] resize-none" placeholder="<svg>...</svg>"></textarea>
+          <button id="btnSendSvg" class="btn btn-primary w-full">إرسال كود الـ SVG للوحة</button>
+        </div>
+
+        <!-- 3. طلب التصدير -->
+        <div class="card space-y-2.5">
+          <div class="flex items-center justify-between border-b border-line pb-1.5">
+            <span class="font-bold text-slate-200 flex items-center gap-1.5"><span>📤</span> طلب التصدير (REQUEST_EXPORT)</span>
+            <span class="text-[10px] text-emerald-400 font-mono">GET</span>
+          </div>
+          <p class="text-slate-400 text-[11px]">طلب استخراج التصميم الحالي من المحرر وإعادته للتطبيق الحاضن برمجياً.</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">دقة صورة PNG:</label>
+              <select id="exportScale" class="inp py-1">
+                <option value="1">1x (دقة عادية)</option>
+                <option value="2" selected>2x (فائقة الدقة HD)</option>
+                <option value="3">3x (دقة طباعة 300DPI)</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="btnReqPng" class="btn btn-primary w-full py-1.5">🖼️ طلب PNG</button>
+            </div>
+          </div>
+          <button id="btnReqSvg" class="btn w-full border-accent/40 text-accent2 hover:bg-accent/10">💻 طلب كود SVG الكامل</button>
+        </div>
+
+        <!-- 4. تعديل لوحة الرسم ومسحها -->
+        <div class="card space-y-2.5">
+          <div class="flex items-center justify-between border-b border-line pb-1.5">
+            <span class="font-bold text-slate-200 flex items-center gap-1.5"><span>⚙️</span> أبعاد اللوحة والتحكم</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <span class="block text-slate-400 text-[10.5px] mb-1">العرض:</span>
+              <input id="artWInp" type="number" class="inp text-center py-1" value="1200">
+            </div>
+            <div>
+              <span class="block text-slate-400 text-[10.5px] mb-1">الارتفاع:</span>
+              <input id="artHInp" type="number" class="inp text-center py-1" value="630">
+            </div>
+            <div>
+              <span class="block text-slate-400 text-[10.5px] mb-1">الخلفية:</span>
+              <input id="artBgInp" type="color" class="inp p-0.5 h-[29px]" value="#ffffff">
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button id="btnSetArtboard" class="btn flex-1 py-1.5">تطبيق الأبعاد (SET_ARTBOARD)</button>
+            <button id="btnClearCanvas" class="btn text-red-400 border-red-500/30 hover:bg-red-500/10 py-1.5">🗑️ مسح اللوحة</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- محتوى تبويب سجل الأحداث المباشر -->
+      <div id="tabLogs" class="hidden flex-1 flex flex-col min-h-0 p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-bold text-slate-300">سجل الرسائل المتبادلة (postMessage Log)</span>
+          <button id="btnClearLogs" class="btn py-0.5 px-2 text-[10.5px]">مسح السجل</button>
+        </div>
+        <div id="logsContainer" dir="ltr" class="flex-1 bg-black/70 rounded-xl border border-line p-2.5 font-mono text-[10.5px] overflow-y-auto space-y-2 select-text leading-relaxed">
+          <div class="text-slate-500">// بانتظار بدء تبادل الرسائل...</div>
+        </div>
+      </div>
+
+      <!-- محتوى تبويب النتائج المصدرة -->
+      <div id="tabResults" class="hidden flex-1 flex flex-col min-h-0 p-3 space-y-3 overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-line pb-2">
+          <span class="font-bold text-slate-200">البيانات المستلمة من الاستوديو</span>
+          <span id="lastExportTime" class="text-slate-500 text-[10.5px]">لا توجد نتائج بعد</span>
+        </div>
+
+        <div id="emptyResultPlaceholder" class="p-8 text-center text-slate-500 space-y-1">
+          <div class="text-3xl mb-2">📥</div>
+          <p>لم يتم استلام أي تصدير حتى الآن.</p>
+          <p class="text-[11px]">اضغط على "طلب PNG" أو "طلب SVG" من التبويب الأول لرؤية النتيجة هنا.</p>
+        </div>
+
+        <!-- معاينة الـ PNG المستلم -->
+        <div id="pngResultBox" class="hidden card space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-emerald-400">🖼️ تم استلام صورة PNG</span>
+            <a id="btnDownloadPng" href="#" download="exported-studio.png" class="btn btn-primary py-1 text-[11px]">تحميل الصورة 💾</a>
+          </div>
+          <div class="rounded-lg border border-line overflow-hidden bg-black/60 p-2 flex items-center justify-center">
+            <img id="imgResultPreview" class="max-h-48 max-w-full rounded object-contain shadow-lg">
+          </div>
+          <div id="pngMeta" class="text-slate-400 font-mono text-[10px]"></div>
+        </div>
+
+        <!-- معاينة كود الـ SVG المستلم -->
+        <div id="svgResultBox" class="hidden card space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-accent2">💻 تم استلام كود SVG</span>
+            <button id="btnCopySvgResult" class="btn py-1 text-[11px]">نسخ الكود 📋</button>
+          </div>
+          <textarea id="svgResultPreview" dir="ltr" rows="6" class="inp font-mono text-[10.5px] resize-none select-text leading-relaxed" readonly></textarea>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- منطقة عرض الـ iframe للاستوديو -->
+    <main class="flex-1 bg-darkBg relative flex flex-col min-h-0">
+      <div class="h-8 bg-panel border-b border-line px-3 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+          <span>إطار الاستوديو المضمّن (&lt;iframe&gt;)</span>
+        </div>
+        <span class="font-mono text-slate-500">Parent Window &lt;--&gt; Iframe Window</span>
+      </div>
+      
+      <div class="flex-1 relative">
+        <iframe id="vectorStudioIframe" src="vector-studio.html" class="w-full h-full border-0 absolute inset-0 bg-[#0b0d11]"></iframe>
+      </div>
+    </main>
+
+  </div>
+
+  <div id="toast" dir="rtl" class="fixed bottom-5 left-5 z-50 bg-panel border border-line px-4 py-2 rounded-xl text-white font-semibold text-xs shadow-2xl opacity-0 transition-opacity pointer-events-none"></div>
+
+<script>
+'use strict';
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+const iframe = $('#vectorStudioIframe');
+const logsContainer = $('#logsContainer');
+const statusBadge = $('#statusBadge');
+
+/* ---------- توست التنبيهات ---------- */
+let toastTimer = null;
+function toast(msg) {
+  const t = $('#toast');
+  t.innerHTML = msg;
+  t.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+/* ---------- تسجيل الرسائل في شاشة المراقبة ---------- */
+function logMessage(dir, type, payload) {
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const isOut = dir === 'OUT';
+  
+  const div = document.createElement('div');
+  div.className = `p-2 rounded-lg border ${isOut ? 'bg-blue-950/20 border-blue-800/40' : 'bg-emerald-950/20 border-emerald-800/40'}`;
+  
+  const payloadStr = payload ? JSON.stringify(payload, null, 2) : '';
+  const shortPayload = payloadStr.length > 250 ? payloadStr.slice(0, 250) + '... (تم اختصار المحتوى)' : payloadStr;
+
+  div.innerHTML = `
+    <div class="flex items-center justify-between mb-1">
+      <span class="font-bold ${isOut ? 'text-accent2' : 'text-emerald-400'}">
+        ${isOut ? '📤 إرسال إلى الاستوديو' : '📥 استلام من الاستوديو'}: <span class="text-white">${type}</span>
+      </span>
+      <span class="text-slate-500 text-[10px]">${time}</span>
+    </div>
+    ${shortPayload ? `<pre class="text-[10px] text-slate-300 overflow-x-auto select-text">${shortPayload}</pre>` : ''}
+  `;
+
+  logsContainer.appendChild(div);
+  logsContainer.scrollTop = logsContainer.scrollHeight;
+}
+
+$('#btnClearLogs').onclick = () => {
+  logsContainer.innerHTML = '<div class="text-slate-500">// تم مسح السجل...</div>';
+};
+
+/* ---------- إرسال أمر إلى الـ Iframe ---------- */
+function postToStudio(type, data = {}) {
+  try {
+    const msg = { type, data };
+    iframe.contentWindow.postMessage(msg, '*');
+    logMessage('OUT', type, data);
+  } catch (err) {
+    console.error('فشل إرسال الرسالة إلى الـ iframe:', err);
+    toast('❌ تعذر إرسال الأمر للاستوديو');
+  }
+}
+
+/* ---------- الاستماع للرسائل الواردة من الاستوديو ---------- */
+window.addEventListener('message', event => {
+  const { type, payload } = event.data || {};
+  if (!type) return;
+
+  logMessage('IN', type, payload);
+
+  // 1. استلام إشعار الجاهزية
+  if (type === 'VECTOR_STUDIO_READY') {
+    statusBadge.className = 'badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+    statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span> متصل وجاهز للاستخدام';
+    toast('✅ تم الاتصال بنجاح مع محرر Vector Studio');
+  }
+
+  // 2. استلام نتيجة التصدير
+  if (type === 'VECTOR_STUDIO_EXPORT_RESULT') {
+    $('#emptyResultPlaceholder').classList.add('hidden');
+    $('#lastExportTime').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString();
+
+    if (payload.format === 'png') {
+      $('#pngResultBox').classList.remove('hidden');
+      $('#imgResultPreview').src = payload.dataUrl;
+      $('#btnDownloadPng').href = payload.dataUrl;
+      $('#pngMeta').textContent = `الأبعاد: ${payload.width} × ${payload.height} بكسل`;
+      switchTab('tabResults');
+      toast('🖼️ تم استلام صورة الـ PNG بنجاح');
+    } else if (payload.format === 'svg') {
+      $('#svgResultBox').classList.remove('hidden');
+      $('#svgResultPreview').value = payload.svgString;
+      switchTab('tabResults');
+      toast('💻 تم استلام كود الـ SVG بنجاح');
+    }
+  }
+
+  // 3. حدوث تعديلات على اللوحة
+  if (type === 'VECTOR_STUDIO_CHANGE') {
+    console.log('حدث تعديل في لوحة الاستوديو، عدد الطبقات:', payload?.layerCount);
+  }
+});
+
+/* ---------- تبديل تبويبات اللوحة الجانبية ---------- */
+function switchTab(targetId) {
+  $$('.test-tab-btn').forEach(b => {
+    const isActive = b.dataset.target === targetId;
+    b.className = `test-tab-btn flex-1 py-2 text-center font-bold border-b-2 ${isActive ? 'border-accent text-white' : 'border-transparent text-slate-400 hover:text-white'}`;
+  });
+  $('#tabTests').classList.toggle('hidden', targetId !== 'tabTests');
+  $('#tabLogs').classList.toggle('hidden', targetId !== 'tabLogs');
+  $('#tabResults').classList.toggle('hidden', targetId !== 'tabResults');
+}
+
+$$('.test-tab-btn').forEach(btn => {
+  btn.onclick = () => switchTab(btn.dataset.target);
+});
+
+/* ---------- نماذج SVG الجاهزة للتجربة ---------- */
+const PRESETS = {
+  star: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <polygon points="400,120 460,280 630,280 490,380 540,540 400,440 260,540 310,380 170,280 340,280" fill="#f59e0b" stroke="#d97706" stroke-width="6"/>
+</svg>`,
+  badge: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <path d="M 400 100 L 580 160 C 580 360 400 500 400 500 C 400 500 220 360 220 160 Z" fill="#4c8dff" stroke="#1d4ed8" stroke-width="8"/>
+  <circle cx="400" cy="270" r="60" fill="#ffffff"/>
+</svg>`,
+  heart: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <path d="M 400 480 C 400 480 200 350 200 230 C 200 150 270 120 330 150 C 370 170 400 210 400 210 C 400 210 430 170 470 150 C 530 120 600 150 600 230 C 600 350 400 480 400 480 Z" fill="#ef4444" stroke="#b91c1c" stroke-width="6"/>
+</svg>`
+};
+
+$('#svgCodeInp').value = PRESETS.star;
+$$('.svg-preset-btn').forEach(btn => {
+  btn.onclick = () => {
+    $('#svgCodeInp').value = PRESETS[btn.dataset.preset] || '';
+    toast('تم تعبئة النموذج: ' + btn.textContent);
+  };
+});
+
+/* ---------- معالجة أزرار الاختبار ---------- */
+
+// 1. إرسال صورة برابط
+$('#btnSendImgUrl').onclick = () => {
+  const url = $('#imgUrlInp').value.trim();
+  if (!url) { toast('⚠️ أدخل رابط الصورة أولاً'); return; }
+  postToStudio('IMPORT_IMAGE', { url });
+  toast('📤 تم إرسال الصورة للاستوديو');
+};
+
+// 2. رفع صورة من الجهاز وإرسالها
+$('#btnPickHostFile').onclick = () => $('#fileInpHost').click();
+$('#fileInpHost').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    postToStudio('IMPORT_IMAGE', { urlOrBase64: reader.result, name: file.name });
+    toast('📤 تم إرسال الصورة المحلية للاستوديو');
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+// 3. إرسال كود SVG
+$('#btnSendSvg').onclick = () => {
+  const svgString = $('#svgCodeInp').value.trim();
+  if (!svgString) { toast('⚠️ اكتب أو الصق كود SVG أولاً'); return; }
+  postToStudio('IMPORT_SVG', { svgString });
+  toast('📤 تم إرسال كود الـ SVG');
+};
+
+// 4. طلب التصدير
+$('#btnReqPng').onclick = () => {
+  const scale = +$('#exportScale').value || 2;
+  postToStudio('REQUEST_EXPORT', { format: 'png', scale });
+  toast('⏳ تم طلب تصدير PNG، بانتظار المعالجة...');
+};
+
+$('#btnReqSvg').onclick = () => {
+  postToStudio('REQUEST_EXPORT', { format: 'svg' });
+  toast('⏳ تم طلب تصدير كود SVG...');
+};
+
+// 5. تعديل أبعاد اللوحة
+$('#btnSetArtboard').onclick = () => {
+  const width = +$('#artWInp').value || 1200;
+  const height = +$('#artHInp').value || 630;
+  const background = $('#artBgInp').value;
+  postToStudio('SET_ARTBOARD', { width, height, background });
+  toast('⚙️ تم إرسال الأبعاد الجديدة للوحة');
+};
+
+// 6. مسح اللوحة
+$('#btnClearCanvas').onclick = () => {
+  if (confirm('هل تريد إرسال أمر مسح جميع العناصر من اللوحة؟')) {
+    postToStudio('CLEAR_CANVAS');
+    toast('🗑️ تم إرسال أمر مسح اللوحة');
+  }
+};
+
+// نسخ نتيجة الـ SVG
+$('#btnCopySvgResult').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText($('#svgResultPreview').value);
+    toast('📋 تم نسخ كود SVG المستلم');
+  } catch (err) {
+    toast('❌ تعذر النسخ');
+  }
+};
+
+// إعادة تحميل الـ Iframe
+$('#btnReloadIframe').onclick = () => {
+  const url = $('#studioUrlInp').value.trim() || 'vector-studio.html';
+  statusBadge.className = 'badge bg-red-500/15 text-red-400 border border-red-500/30';
+  statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> جاري إعادة التحميل...';
+  iframe.src = url;
+};
+
+console.log('Test Suite Ready 🚀 — جاهز لاختبار التواصل مع Vector Studio');
+</script>
+</body>
+</html>
