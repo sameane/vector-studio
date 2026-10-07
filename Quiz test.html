@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اختبار تفاعلي: المقاومات</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
+    body { 
+      padding: 20px; 
+      font-family: 'Tajawal', sans-serif; 
+      background: #f8fafc; 
+      direction: rtl; 
+      min-height: 100vh;
+    }
+    .paper { 
+      background: white; 
+      padding: 30px; 
+      border-radius: 20px; 
+      max-width: 850px; 
+      margin: 0 auto; 
+      box-shadow: 0 20px 50px rgba(0,0,0,0.05); 
+      position: relative;
+    }
+    .option-btn {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .option-btn:hover:not(.answered) {
+      background-color: #f0fdf4;
+      transform: translateX(-5px);
+    }
+    .correct {
+      background-color: #22c55e !important;
+      color: white !important;
+      border-color: #16a34a !important;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+    .wrong {
+      background-color: #ef4444 !important;
+      color: white !important;
+      border-color: #dc2626 !important;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    .reveal-correct {
+      border: 2px solid #22c55e !important;
+      background-color: #f0fdf4 !important;
+    }
+    mjx-container { 
+      direction: ltr !important; 
+      display: inline-flex !important;
+      vertical-align: middle !important;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slide-up { animation: slideUp 0.5s ease forwards; }
+
+    /* أنماط أزرار استبدال وتعديل الوسائط */
+    .media-container {
+      position: relative;
+      transition: width 0.25s ease, height 0.25s ease, box-shadow 0.2s ease;
+    }
+    .media-container:hover {
+      box-shadow: 0 0 0 2px #3b82f6;
+    }
+    .media-toolbar {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      z-index: 30;
+      display: none;
+      gap: 4px;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(4px);
+      padding: 4px 6px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .media-container:hover .media-toolbar {
+      display: flex;
+    }
+    .media-btn {
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease, background-color 0.2s;
+    }
+    .media-btn:active {
+      transform: scale(0.95);
+    }
+    .media-btn-replace {
+      background-color: #2563eb;
+    }
+    .media-btn-replace:hover {
+      background-color: #1d4ed8;
+    }
+    .media-btn-edit {
+      background-color: #7c3aed;
+    }
+    .media-btn-edit:hover {
+      background-color: #6d28d9;
+    }
+
+    @media print {
+      .media-toolbar, #vectorStudioModal {
+        display: none !important;
+      }
+      .media-container:hover {
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="paper">
+    <div class="w-full h-full relative" style="border-color: rgb(0, 0, 0); padding: 20px; min-height: 280mm; border-style: solid; border-width: 3px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;">
+      
+      <!-- الرأس والشعارات -->
+      <header class="relative z-10 transition-all duration-300 rounded" style="border-color: rgb(0, 0, 0); background-color: transparent; padding: 16px; margin-bottom: 20px; border-style: solid; border-width: 3px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;">
+        <div class="flex justify-between items-start mb-4 gap-4">
+          <!-- الشعار الأيمن -->
+          <div class="media-container shrink-0 rounded-lg p-1" style="width: 120px;">
+            <div class="media-content-holder w-full h-full flex items-center justify-center">
+              <img class="w-full object-contain" src="https://iili.io/fP0Kget.md.png" alt="شعار 1">
+            </div>
+            <div class="media-toolbar">
+              <button type="button" class="media-btn media-btn-replace" title="استبدال بصورة من الجهاز"><span>📁</span><span>استبدال</span></button>
+              <button type="button" class="media-btn media-btn-edit" title="تعديل في Vector Studio"><span>✏️</span><span>تعديل</span></button>
+            </div>
+          </div>
+
+          <h1 class="text-center text-4xl font-normal flex-grow flex items-center justify-center gap-3 self-center" style="font-family: Lalezar; color: rgb(30, 58, 138);">اختبار فيزياء: المقاومات</h1>
+          
+          <!-- الشعار الأيسر -->
+          <div class="media-container shrink-0 rounded-lg p-1" style="width: 200px;">
+            <div class="media-content-holder w-full h-full flex items-center justify-center">
+              <img class="w-full object-contain" src="https://iili.io/fPlgQLv.md.png" alt="شعار 2">
+            </div>
+            <div class="media-toolbar">
+              <button type="button" class="media-btn media-btn-replace" title="استبدال بصورة من الجهاز"><span>📁</span><span>استبدال</span></button>
+              <button type="button" class="media-btn media-btn-edit" title="تعديل في Vector Studio"><span>✏️</span><span>تعديل</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center flex-wrap gap-y-2 font-semibold text-sm bg-white/90 border border-gray-300 rounded p-2">
+          <div>اسم الطالب: ...........................</div>
+          <div>المجموعة: ...................</div>
+          <div>التاريخ: ...................</div>
+          <div>الدرجة: ..... / 10</div>
+        </div>
+      </header>
+
+      <div class="mb-4 font-bold underline decoration-2 decoration-primary/30 relative z-10">اختر الإجابة الصحيحة:</div>
+
+      <div class="flex flex-col relative z-10" style="gap: 16px;">
+        
+        <!-- السؤال 1 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">1.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">ما هي وحدة قياس المقاومة الكهربية في النظام الدولي للوحدات؟</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>الأمبير</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>الفولت</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>الأوم</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>الوات</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 2 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="1">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">2.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">سلك مقاومته الكهربية \(R\) وزيد طوله إلى الضعف مع ثبوت مساحة مقطعه ودراسة تأثير ذلك على مقاومته، فإن مقاومته الجديدة تصبح:</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>\(R\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>\(2R\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>\(\frac{1}{2}R\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>\(4R\)</span></div>
+                </div>
+              </div>
+              
+              <!-- صندوق رسم الـ SVG -->
+              <div class="media-container shrink-0 order-2 flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 rounded-xl" style="width: 200px; height: 80px; min-height: 80px;">
+                <div class="media-content-holder w-full h-full flex items-center justify-center overflow-hidden">
+                  <svg class="max-w-full max-h-full block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80">
+                    <line x1="20" y1="40" x2="180" y2="40" stroke="#333" stroke-width="4" stroke-linecap="round"></line>
+                    <text x="100" y="30" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle">ل, R</text>
+                  </svg>
+                </div>
+                <div class="media-toolbar">
+                  <button type="button" class="media-btn media-btn-replace" title="استبدال بصورة أو SVG من الجهاز"><span>📁</span><span>استبدال</span></button>
+                  <button type="button" class="media-btn media-btn-edit" title="تعديل في Vector Studio"><span>✏️</span><span>تعديل</span></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 3 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">3.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">عند توصيل مقاومين \(R_1 = 5\,\Omega\) و \(R_2 = 10\,\Omega\) على التوالي، تكون المقاومة المكافئة لهما:</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>\(5\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>\(10\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>\(15\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>\(3.33\,\Omega\)</span></div>
+                </div>
+              </div>
+              
+              <!-- صندوق رسم الـ SVG -->
+              <div class="media-container shrink-0 order-2 flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 rounded-xl" style="width: 250px; height: 80px; min-height: 80px;">
+                <div class="media-content-holder w-full h-full flex items-center justify-center overflow-hidden">
+                  <svg class="max-w-full max-h-full block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 80" width="250" height="80">
+                    <line x1="15" y1="40" x2="55" y2="40" stroke="#000" stroke-width="2.5"></line>
+                    <rect x="55" y="25" width="45" height="30" fill="white" stroke="#000" stroke-width="2.5" rx="3"></rect>
+                    <line x1="100" y1="40" x2="140" y2="40" stroke="#000" stroke-width="2.5"></line>
+                    <rect x="140" y="25" width="45" height="30" fill="white" stroke="#000" stroke-width="2.5" rx="3"></rect>
+                    <line x1="185" y1="40" x2="235" y2="40" stroke="#000" stroke-width="2.5"></line>
+                    <text x="77" y="20" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">R1</text>
+                    <text x="162" y="20" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">R2</text>
+                  </svg>
+                </div>
+                <div class="media-toolbar">
+                  <button type="button" class="media-btn media-btn-replace" title="استبدال بصورة أو SVG من الجهاز"><span>📁</span><span>استبدال</span></button>
+                  <button type="button" class="media-btn media-btn-edit" title="تعديل في Vector Studio"><span>✏️</span><span>تعديل</span></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 4 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="3">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">4.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">أي من العوامل الآتية لا يتوقف عليها مقدار مقاومة موصل منتظم المقطع؟</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>طول الموصل</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>مساحة مقطع الموصل</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>نوع مادة الموصل</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>فرق الجهد بين طرفي الموصل</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 5 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">5.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">مقاومتان متساويتان قيمة كل منهما \(10\,\Omega\) موصلتان على التوازي، فإن المقاومة المكافئة لهما تساوي:</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>\(20\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>\(10\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>\(5\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>\(2\,\Omega\)</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 6 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="0">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">6.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">إذا كانت المقاومة النوعية لمادة سلك \(\rho_e = 10^{-6}\,\Omega\cdot\text{m}\)، وطوله \(10\,\text{m}\)، ومساحة مقطعه \(10^{-6}\,\text{m}^2\)، فإن مقاومة السلك تساوي:</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>\(10\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>\(1\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>\(100\,\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>\(0.1\,\Omega\)</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 7 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">7.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">عند إعادة تشكيل سلك ليزداد طوله إلى ثلاثة أمثال ما كان عليه بانتظام، فإن مقاومته تصبح:</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>\(3R\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>\(6R\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>\(9R\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>\(\frac{1}{3}R\)</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 8 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="1">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">8.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">ما هي وحدة قياس المقاومة النوعية لمادة موصل؟</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>\(\Omega\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>\(\Omega\cdot\text{m}\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>\(\Omega/\text{m}\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>\(\text{S}/\text{m}\)</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 9 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">9.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">من الدائرة التالية، إذا مر تيار شدته \(2\,\text{A}\) في مقاومة \(6\,\Omega\)، فإن فرق الجهد بين طرفي المقاومة يساوي:</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>\(3\,\text{V}\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>\(8\,\text{V}\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>\(12\,\text{V}\)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>\(36\,\text{V}\)</span></div>
+                </div>
+              </div>
+
+              <!-- صندوق رسم الـ SVG -->
+              <div class="media-container shrink-0 order-2 flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 rounded-xl" style="width: 200px; height: 100px; min-height: 100px;">
+                <div class="media-content-holder w-full h-full flex items-center justify-center overflow-hidden">
+                  <svg class="max-w-full max-h-full block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="200" height="100">
+                    <line x1="25" y1="50" x2="65" y2="50" stroke="#000" stroke-width="2.5"></line>
+                    <rect x="65" y="32" width="70" height="36" fill="white" stroke="#000" stroke-width="2.5" rx="3"></rect>
+                    <line x1="135" y1="50" x2="175" y2="50" stroke="#000" stroke-width="2.5"></line>
+                    <text x="100" y="55" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#000">6Ω</text>
+                  </svg>
+                </div>
+                <div class="media-toolbar">
+                  <button type="button" class="media-btn media-btn-replace" title="استبدال بصورة أو SVG من الجهاز"><span>📁</span><span>استبدال</span></button>
+                  <button type="button" class="media-btn media-btn-edit" title="تعديل في Vector Studio"><span>✏️</span><span>تعديل</span></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 10 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="1">
+          <!-- العلامة المائية -->
+          <div class="absolute inset-0 w-full h-full flex flex-wrap content-around justify-around items-center pointer-events-none z-0">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+            <img class="object-contain" src="https://iili.io/fPlgQLv.md.png" style="opacity: 0.1; transform: rotate(-15deg) scale(1); max-width: 150px; max-height: 120px; flex-shrink: 0;">
+          </div>
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-primary font-extrabold select-none shrink-0 text-lg">10.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full" style="font-family: Tajawal; color: rgb(17, 24, 39);">
+                  <div class="leading-relaxed font-semibold">إذا زادت التوصيلية الكهربية لمادة موصل إلى الضعف مع ثبوت باقي العوامل، فإن المقاومة النوعية للمادة:</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2" style="font-family: Tajawal; color: rgb(55, 65, 81);">
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[A]</span><span>تزداد للضعف</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[B]</span><span>تقل إلى النصف</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[C]</span><span>تظل كما هي</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border transition-colors bg-option-bg border-option-border hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-primary w-6 text-sm" dir="ltr">[D]</span><span>تزيد أربعة أمثال</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="closing-phrase mt-12 mb-12 flex items-center justify-center gap-4 text-primary no-break relative z-10">
+        <div class="h-0.5 flex-grow bg-gradient-to-r from-transparent to-primary/30"></div>
+        <div class="font-bold text-lg italic px-4 select-none whitespace-nowrap">مع تمنياتي لكم بالتوفيق والنجاح</div>
+        <div class="h-0.5 flex-grow bg-gradient-to-l from-transparent to-primary/30"></div>
+      </div>
+    </div>
+    <div id="result-container" class="mt-12 hidden"></div>
+  </div>
+
+  <!-- عنصر إدخال الملفات المخفي -->
+  <input type="file" id="media-file-input" accept="image/*,.svg" class="hidden">
+
+  <!-- نافذة Vector Studio المنبثقة -->
+  <div id="vectorStudioModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4 transition-all duration-300">
+    <div class="bg-white w-full max-w-[1100px] h-[94vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+      
+      <!-- شريط رأس النافذة -->
+      <div class="flex items-center justify-between px-5 py-3 bg-slate-900 text-white shrink-0 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-black text-sm">VS</div>
+          <div>
+            <h2 class="text-base font-bold leading-tight">محرر Vector Studio</h2>
+            <p class="text-xs text-slate-400">عدّل الرسم ثم احفظه ليتم تطبيقه فوراً وتحديث مقاس الحافظة تلقائياً</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="saveExportBtn" type="button" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-sm rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+            <span>💾 تطبيق التعديلات بالملف</span>
+          </button>
+          <button id="closeStudioBtn" type="button" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-sm rounded-lg transition-all">
+            ✕ إلغاء
+          </button>
+        </div>
+      </div>
+
+      <!-- مساحة الـ Iframe -->
+      <div class="flex-grow w-full h-full relative bg-slate-100 flex items-center justify-center">
+        <div id="iframeLoader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 z-10 gap-3 text-slate-600">
+          <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-sm font-semibold">جاري فتح وتجهيز الاستوديو...</span>
+        </div>
+        <iframe id="vectorStudioIframe" class="w-full h-full border-0 relative z-20" allow="clipboard-read; clipboard-write"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====================================================
+    // 1. نظام الاختبار التفاعلي واحتساب النتائج
+    // ====================================================
+    window.addEventListener('load', () => {
+      const questions = document.querySelectorAll('.interactive-q');
+      let score = 0;
+      let answeredCount = 0;
+      const total = questions.length;
+
+      questions.forEach(q => {
+        const options = q.querySelectorAll('.grid > div');
+        const correctIdx = parseInt(q.getAttribute('data-correct'));
+
+        options.forEach((opt, idx) => {
+          opt.classList.add('option-btn');
+          opt.addEventListener('click', () => {
+            if (q.hasAttribute('data-answered')) return;
+            
+            q.setAttribute('data-answered', 'true');
+            answeredCount++;
+            
+            options.forEach(o => o.classList.add('answered'));
+
+            if (idx === correctIdx) {
+              opt.classList.add('correct');
+              score++;
+            } else {
+              opt.classList.add('wrong');
+              options[correctIdx].classList.add('reveal-correct');
+            }
+
+            if (answeredCount === total) {
+              setTimeout(showFinalResult, 600);
+            }
+          });
+        });
+      });
+
+      function showFinalResult() {
+        const percent = (score / total) * 100;
+        const container = document.getElementById('result-container');
+        container.classList.remove('hidden');
+        container.classList.add('animate-slide-up');
+        
+        const isSuccess = percent >= 60;
+        
+        container.innerHTML = `
+          <div class="p-8 rounded-3xl text-center border-4 ${isSuccess ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'} shadow-2xl">
+            <div class="text-6xl mb-4">${isSuccess ? '🎉' : '📚'}</div>
+            <h2 class="text-3xl font-black mb-2 ${isSuccess ? 'text-green-700' : 'text-red-700'}">
+              ${isSuccess ? 'أحسنت! تهانينا على النجاح' : 'حظاً أوفر في المرة القادمة'}
+            </h2>
+            <p class="text-xl text-gray-600 mb-6">لقد أجبت بشكل صحيح على ${score} من أصل ${total} سؤال</p>
+            <div class="inline-block px-10 py-4 rounded-2xl bg-white shadow-inner border-2 ${isSuccess ? 'border-green-200' : 'border-red-200'}">
+              <span class="text-5xl font-black ${isSuccess ? 'text-green-600' : 'text-red-600'}">${percent.toFixed(1)}%</span>
+            </div>
+            ${isSuccess ? '<p class="mt-6 text-green-600 font-bold">استمر في هذا الأداء الرائع! 🚀</p>' : '<p class="mt-6 text-red-600 font-bold">راجع الدروس وحاول مرة أخرى لتحسين نتيجتك. 💪</p>'}
+          </div>
+        `;
+
+        if (isSuccess && window.confetti) {
+          const duration = 3 * 1000;
+          const end = Date.now() + duration;
+
+          (function frame() {
+            confetti({
+              particleCount: 3,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 },
+              colors: ['#22c55e', '#3b82f6', '#f59e0b']
+            });
+            confetti({
+              particleCount: 3,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 },
+              colors: ['#22c55e', '#3b82f6', '#f59e0b']
+            });
+
+            if (Date.now() < end) {
+              requestAnimationFrame(frame);
+            }
+          }());
+        }
+        
+        container.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      setupMediaManager();
+    });
+
+    // ====================================================
+    // 2. إدارة الوسائط ومواءمة الأبعاد ديناميكياً
+    // ====================================================
+    const VECTOR_STUDIO_ORIGIN = 'https://vector-studio-tawny.vercel.app';
+    const modal = document.getElementById('vectorStudioModal');
+    const iframe = document.getElementById('vectorStudioIframe');
+    const iframeLoader = document.getElementById('iframeLoader');
+    const fileInput = document.getElementById('media-file-input');
+    const saveExportBtn = document.getElementById('saveExportBtn');
+    const closeStudioBtn = document.getElementById('closeStudioBtn');
+
+    let activeMediaContainer = null;
+    let pendingMessageData = null;
+
+    // دالة تحديث مقاسات الحافظة بدقة بناء على الـ SVG أو الصورة
+    function updateContainerDimensions(container, element, explicitW, explicitH) {
+      if (!container || !element) return;
+
+      let w = explicitW;
+      let h = explicitH;
+
+      if (!w || !h) {
+        if (element.tagName.toLowerCase() === 'svg') {
+          // استخراج الأبعاد من الـ viewBox إن وجدت
+          const vb = element.getAttribute('viewBox');
+          if (vb) {
+            const parts = vb.trim().split(/[\s,]+/);
+            if (parts.length === 4) {
+              w = parseFloat(parts[2]);
+              h = parseFloat(parts[3]);
+            }
+          }
+          // محاولة ثانية من خصائص width و height
+          if (!w || !h) {
+            w = parseFloat(element.getAttribute('width'));
+            h = parseFloat(element.getAttribute('height'));
+          }
+        } else if (element.tagName.toLowerCase() === 'img') {
+          w = element.naturalWidth || parseFloat(element.getAttribute('width'));
+          h = element.naturalHeight || parseFloat(element.getAttribute('height'));
+        }
+      }
+
+      if (w && h && !isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+        const isHeader = !!container.closest('header');
+        // وضع حد أقصى مرن لحماية تخطيط ورقة الاختبار
+        const maxLimitW = isHeader ? 220 : 340;
+        const maxLimitH = isHeader ? 120 : 180;
+
+        let targetW = w;
+        let targetH = h;
+
+        // مواءمة الأبعاد مع الحفاظ التام على النسبة التناسبية (Aspect Ratio)
+        if (targetW > maxLimitW) {
+          const ratio = maxLimitW / targetW;
+          targetW = maxLimitW;
+          targetH = targetH * ratio;
+        }
+
+        if (targetH > maxLimitH) {
+          const ratio = maxLimitH / targetH;
+          targetH = maxLimitH;
+          targetW = targetW * ratio;
+        }
+
+        // تطبيق المقاسات الجديدة على الحافظة
+        container.style.width = `${Math.round(targetW)}px`;
+        container.style.height = `${Math.round(targetH)}px`;
+        container.style.minHeight = `${Math.round(targetH)}px`;
+      }
+    }
+
+    function setupMediaManager() {
+      document.querySelectorAll('.media-container').forEach(container => {
+        const replaceBtn = container.querySelector('.media-btn-replace');
+        const editBtn = container.querySelector('.media-btn-edit');
+
+        if (replaceBtn) {
+          replaceBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activeMediaContainer = container;
+            fileInput.value = '';
+            fileInput.click();
+          });
+        }
+
+        if (editBtn) {
+          editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activeMediaContainer = container;
+            openVectorStudioForContainer(container);
+          });
+        }
+      });
+    }
+
+    // فتح Vector Studio
+    function openVectorStudioForContainer(container) {
+      const holder = container.querySelector('.media-content-holder') || container;
+      const media = holder.querySelector('svg, img');
+      if (!media) return;
+
+      const isSvg = media.tagName.toLowerCase() === 'svg';
+
+      if (isSvg) {
+        if (!media.getAttribute('xmlns')) {
+          media.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        }
+        const svgString = new XMLSerializer().serializeToString(media);
+        pendingMessageData = {
+          type: 'IMPORT_SVG',
+          data: { svgString: svgString }
+        };
+      } else {
+        pendingMessageData = {
+          type: 'IMPORT_IMAGE',
+          data: { url: media.src }
+        };
+      }
+
+      iframeLoader.style.display = 'flex';
+      modal.classList.remove('hidden');
+      iframe.src = VECTOR_STUDIO_ORIGIN;
+    }
+
+    function sendDataToStudio() {
+      if (pendingMessageData && iframe.contentWindow) {
+        iframe.contentWindow.postMessage(pendingMessageData, VECTOR_STUDIO_ORIGIN);
+        pendingMessageData = null;
+      }
+    }
+
+    function closeStudioModal() {
+      modal.classList.add('hidden');
+      iframeLoader.style.display = 'flex';
+      iframe.src = 'about:blank';
+    }
+
+    closeStudioBtn.addEventListener('click', closeStudioModal);
+
+    // طلب التصدير
+    saveExportBtn.addEventListener('click', () => {
+      if (!iframe.contentWindow || !activeMediaContainer) return;
+      const holder = activeMediaContainer.querySelector('.media-content-holder') || activeMediaContainer;
+      const currentMedia = holder.querySelector('svg, img');
+      const isSvg = currentMedia && currentMedia.tagName.toLowerCase() === 'svg';
+
+      iframe.contentWindow.postMessage({
+        type: 'REQUEST_EXPORT',
+        data: {
+          format: isSvg ? 'svg' : 'png',
+          scale: 2,
+          closeOnExport: true
+        }
+      }, VECTOR_STUDIO_ORIGIN);
+    });
+
+    // استقبال رسائل Vector Studio
+    window.addEventListener('message', (event) => {
+      if (event.origin !== VECTOR_STUDIO_ORIGIN) return;
+      if (event.source !== iframe.contentWindow) return;
+
+      const { type, payload } = event.data || {};
+
+      if (type === 'VECTOR_STUDIO_READY') {
+        iframeLoader.style.display = 'none';
+        sendDataToStudio();
+      }
+
+      if (type === 'VECTOR_STUDIO_EXPORT_RESULT') {
+        applyResultToContainer(payload);
+      }
+
+      if (type === 'VECTOR_STUDIO_CLOSE') {
+        closeStudioModal();
+      }
+
+      if (type === 'VECTOR_STUDIO_EXPORT_ERROR') {
+        alert('حدث خطأ أثناء التصدير: ' + (payload?.message || 'خطأ غير معروف'));
+      }
+    });
+
+    // تطبيق نتيجة التعديل وتعديل أبعاد الحافظة تلقائياً
+    function applyResultToContainer(payload) {
+      if (!activeMediaContainer || !payload) return;
+      const holder = activeMediaContainer.querySelector('.media-content-holder') || activeMediaContainer;
+      const currentMedia = holder.querySelector('svg, img');
+
+      if (payload.format === 'svg' && payload.svgString) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(payload.svgString, 'image/svg+xml');
+        const newSvg = doc.querySelector('svg');
+        if (newSvg) {
+          newSvg.classList.add('max-w-full', 'max-h-full', 'block');
+          if (currentMedia) {
+            currentMedia.replaceWith(newSvg);
+          } else {
+            holder.appendChild(newSvg);
+          }
+          // تحديث أبعاد الحافظة
+          updateContainerDimensions(activeMediaContainer, newSvg, payload.width, payload.height);
+        }
+      } else if (payload.dataUrl) {
+        if (currentMedia && currentMedia.tagName.toLowerCase() === 'img') {
+          currentMedia.src = payload.dataUrl;
+          currentMedia.onload = () => updateContainerDimensions(activeMediaContainer, currentMedia, payload.width, payload.height);
+        } else {
+          const newImg = document.createElement('img');
+          newImg.src = payload.dataUrl;
+          newImg.className = 'max-w-full max-h-full object-contain block';
+          if (currentMedia) {
+            currentMedia.replaceWith(newImg);
+          } else {
+            holder.appendChild(newImg);
+          }
+          newImg.onload = () => updateContainerDimensions(activeMediaContainer, newImg, payload.width, payload.height);
+        }
+      }
+
+      closeStudioModal();
+    }
+
+    // ====================================================
+    // 3. الاستبدال من الجهاز وتحديث المقاسات
+    // ====================================================
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !activeMediaContainer) return;
+
+      const holder = activeMediaContainer.querySelector('.media-content-holder') || activeMediaContainer;
+      const currentMedia = holder.querySelector('svg, img');
+      const isSvgFile = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+
+      const reader = new FileReader();
+
+      if (isSvgFile) {
+        reader.onload = (event) => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(event.target.result, 'image/svg+xml');
+          const newSvg = doc.querySelector('svg');
+          if (newSvg) {
+            newSvg.classList.add('max-w-full', 'max-h-full', 'block');
+            if (currentMedia) {
+              currentMedia.replaceWith(newSvg);
+            } else {
+              holder.appendChild(newSvg);
+            }
+            // تحديث المقاس تلقائياً
+            updateContainerDimensions(activeMediaContainer, newSvg);
+          } else {
+            alert('تعذر قراءة ملف الـ SVG، يرجى التحقق من الملف.');
+          }
+        };
+        reader.readAsText(file);
+      } else {
+        reader.onload = (event) => {
+          if (currentMedia && currentMedia.tagName.toLowerCase() === 'img') {
+            currentMedia.src = event.target.result;
+            currentMedia.onload = () => updateContainerDimensions(activeMediaContainer, currentMedia);
+          } else {
+            const newImg = document.createElement('img');
+            newImg.src = event.target.result;
+            newImg.className = 'max-w-full max-h-full object-contain block';
+            if (currentMedia) {
+              currentMedia.replaceWith(newImg);
+            } else {
+              holder.appendChild(newImg);
+            }
+            newImg.onload = () => updateContainerDimensions(activeMediaContainer, newImg);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
+</body>
+</html>
