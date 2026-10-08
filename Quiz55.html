@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اختبار تفاعلي: المقاومات الكهربية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Lalezar&display=swap');
+    
+    body { 
+      padding: 20px; 
+      font-family: 'Tajawal', sans-serif; 
+      background: #f1f5f9; 
+      direction: rtl; 
+      min-height: 100vh;
+      color: #1e293b;
+    }
+
+    .paper { 
+      background: white; 
+      padding: 30px; 
+      border-radius: 20px; 
+      max-width: 900px; 
+      margin: 0 auto; 
+      box-shadow: 0 20px 50px rgba(0,0,0,0.06); 
+      position: relative;
+    }
+
+    .option-btn {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .option-btn:hover:not(.answered) {
+      background-color: #f0fdf4;
+      transform: translateX(-4px);
+    }
+    .correct {
+      background-color: #22c55e !important;
+      color: white !important;
+      border-color: #16a34a !important;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+    .wrong {
+      background-color: #ef4444 !important;
+      color: white !important;
+      border-color: #dc2626 !important;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    .reveal-correct {
+      border: 2px solid #22c55e !important;
+      background-color: #f0fdf4 !important;
+    }
+
+    mjx-container { 
+      direction: ltr !important; 
+      display: inline-flex !important;
+      vertical-align: middle !important;
+    }
+
+    /* بنية OMML الخاصة ببرنامج Word - تظل مخفية في عرض المتصفح وتُفعّل عند النسخ */
+    .omml-data {
+      display: none;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slide-up { animation: slideUp 0.5s ease forwards; }
+
+    /* أنماط أزرار استبدال وتعديل الوسائط */
+    .media-container {
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .media-container:hover {
+      box-shadow: 0 0 0 2px #3b82f6;
+    }
+    .media-toolbar {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      z-index: 30;
+      display: none;
+      gap: 4px;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(4px);
+      padding: 4px 6px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .media-container:hover .media-toolbar {
+      display: flex;
+    }
+    .media-btn {
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease, background-color 0.2s;
+    }
+    .media-btn:active {
+      transform: scale(0.95);
+    }
+    .media-btn-replace { background-color: #2563eb; }
+    .media-btn-replace:hover { background-color: #1d4ed8; }
+    .media-btn-edit { background-color: #7c3aed; }
+    .media-btn-edit:hover { background-color: #6d28d9; }
+
+    /* تنسيقات الطباعة والتصدير كـ PDF */
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 0;
+        background: white !important;
+      }
+      .no-print, .media-toolbar, #vectorStudioModal {
+        display: none !important;
+      }
+      .paper {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+      .paper > .w-full.h-full.relative {
+        border-width: 2px !important;
+        box-shadow: none !important;
+        padding: 10px !important;
+      }
+      .hide-in-pdf {
+        display: none !important;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- شريط أدوات التحكم والتصدير الإضافي (أعلى الاختبار) -->
+  <aside aria-label="أدوات تصدير الاختبار" class="max-w-[900px] mx-auto mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4 no-print">
+    <div class="flex items-center gap-2">
+      <span class="font-bold text-slate-800 text-sm">أدوات الاختبار:</span>
+      <label class="flex items-center gap-2 text-sm bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl cursor-pointer select-none transition-colors">
+        <input type="checkbox" id="include-answers-toggle" checked class="w-4 h-4 text-blue-600 rounded">
+        <span>تضمين الإجابات والشرح في الطباعة و PDF</span>
+      </label>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- زر النسخ للوورد -->
+      <button id="btn-copy-word" type="button" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition shadow hover:shadow-md">
+        <span>📋</span>
+        <span>نسخ لـ Word (مع OMML)</span>
+      </button>
+
+      <!-- زر تصدير PDF -->
+      <button id="btn-export-pdf" type="button" class="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition shadow hover:shadow-md">
+        <span>📄</span>
+        <span>تصدير PDF</span>
+      </button>
+
+      <!-- زر تصدير CSV -->
+      <button id="btn-export-csv" type="button" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition shadow hover:shadow-md">
+        <span>📊</span>
+        <span>تصدير CSV</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ورقة الاختبار الرئيسية -->
+  <div class="paper" id="quiz-printable-area">
+    <div class="w-full h-full relative" style="border-color: rgb(0, 0, 0); padding: 20px; min-height: 280mm; border-style: solid; border-width: 3px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;">
+      
+      <!-- الرأس والشعارات -->
+      <header class="relative z-10 transition-all duration-300 rounded" style="border-color: rgb(0, 0, 0); background-color: transparent; padding: 16px; margin-bottom: 20px; border-style: solid; border-width: 3px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;">
+        <div class="flex justify-between items-start mb-4 gap-4">
+          <!-- الشعار الأيمن -->
+          <div class="media-container shrink-0 rounded-lg p-1" style="width: 120px;">
+            <div class="media-content-holder w-full h-full flex items-center justify-center">
+              <img class="w-full object-contain" src="https://iili.io/fP0Kget.md.png" alt="شعار 1">
+            </div>
+            <div class="media-toolbar no-print">
+              <button type="button" class="media-btn media-btn-replace" title="استبدال بصورة من الجهاز"><span>📁</span><span>استبدال</span></button>
+              <button type="button" class="media-btn media-btn-edit" title="تعديل في Vector Studio"><span>✏️</span><span>تعديل</span></button>
+            </div>
+          </div>
+
+          <h1 class="text-center text-4xl font-normal flex-grow flex items-center justify-center gap-3 self-center" style="font-family: Lalezar, sans-serif; color: rgb(30, 58, 138);">اختبار فيزياء: المقاومات الكهربية</h1>
+          
+          <!-- الشعار الأيسر -->
+          <div class="media-container shrink-0 rounded-lg p-1" style="width: 170px;">
+            <div class="media-content-holder w-full h-full flex items-center justify-center">
+              <img class="w-full object-contain" src="https://iili.io/fPlgQLv.md.png" alt="شعار 2">
+            </div>
+            <div class="media-toolbar no-print">
+              <button type="button" class="media-btn media-btn-replace" title="استبدال بصورة من الجهاز"><span>📁</span><span>استبدال</span></button>
+              <button type="button" class="media-btn media-btn-edit" title="تعديل في Vector Studio"><span>✏️</span><span>تعديل</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center flex-wrap gap-y-2 font-semibold text-sm bg-white/90 border border-gray-300 rounded p-2">
+          <div>اسم الطالب: ...........................</div>
+          <div>المجموعة: ...................</div>
+          <div>التاريخ: ...................</div>
+          <div>الدرجة: ..... / 10</div>
+        </div>
+      </header>
+
+      <div class="mb-4 font-bold underline decoration-2 decoration-blue-500 relative z-10 text-slate-800">اختر الإجابة الصحيحة من بين البدائل التالية:</div>
+
+      <div class="flex flex-col relative z-10" style="gap: 16px;">
+        
+        <!-- السؤال 1 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2" data-qindex="1">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">1.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  ما هي وحدة قياس المقاومة الكهربية في النظام الدولي للوحدات (SI)؟
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>الأمبير (A)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>الفولت (V)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>الأوم (Ω)</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>الوات (W)</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 2 (يحتوي معادلات OMML و SVG) -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="1" data-qindex="2">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">2.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  سلك مقاومته الكهربية 
+                  <span class="math-expr" data-latex="R">
+                    \(R\)
+                    <span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>R</m:t></m:r></m:oMath></span>
+                  </span>
+                  وزيد طوله إلى الضعف مع ثبوت مساحة مقطعه، فإن مقاومته الكهربية الجديدة تصبح:
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50">
+                    <span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span>
+                    <span class="math-expr" data-latex="R">\(R\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>R</m:t></m:r></m:oMath></span></span>
+                  </div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50">
+                    <span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span>
+                    <span class="math-expr" data-latex="2R">\(2R\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>2R</m:t></m:r></m:oMath></span></span>
+                  </div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50">
+                    <span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span>
+                    <span class="math-expr" data-latex="\frac{1}{2}R">\(\frac{1}{2}R\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:f><m:num><m:r><m:t>1</m:t></m:r></m:num><m:den><m:r><m:t>2</m:t></m:r></m:den></m:f><m:r><m:t>R</m:t></m:r></m:oMath></span></span>
+                  </div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50">
+                    <span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span>
+                    <span class="math-expr" data-latex="4R">\(4R\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>4R</m:t></m:r></m:oMath></span></span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- صندوق رسم الـ SVG -->
+              <div class="media-container shrink-0 order-2 flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 rounded-xl" style="width: 210px; min-height: 105px;">
+                <div class="media-content-holder w-full h-full flex items-center justify-center overflow-hidden">
+                  <svg class="max-w-full max-h-full block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80">
+                    <line x1="20" y1="40" x2="180" y2="40" stroke="#333" stroke-width="4" stroke-linecap="round"></line>
+                    <text x="100" y="30" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle">L, R</text>
+                  </svg>
+                </div>
+                <div class="media-toolbar no-print">
+                  <button type="button" class="media-btn media-btn-replace" title="استبدال بصورة أو SVG من الجهاز"><span>📁</span><span>استبدال</span></button>
+                  <button type="button" class="media-btn media-btn-edit" title="تعديل في Vector Studio"><span>✏️</span><span>تعديل</span></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 3 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2" data-qindex="3">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">3.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  عند توصيل مقاومين 
+                  <span class="math-expr" data-latex="R_1 = 5\,\Omega">
+                    \(R_1 = 5\,\Omega\)
+                    <span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:sSub><m:e><m:r><m:t>R</m:t></m:r></m:e><m:sub><m:r><m:t>1</m:t></m:r></m:sub></m:sSub><m:r><m:t>=5 Ω</m:t></m:r></m:oMath></span>
+                  </span> 
+                  و 
+                  <span class="math-expr" data-latex="R_2 = 10\,\Omega">
+                    \(R_2 = 10\,\Omega\)
+                    <span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:sSub><m:e><m:r><m:t>R</m:t></m:r></m:e><m:sub><m:r><m:t>2</m:t></m:r></m:sub></m:sSub><m:r><m:t>=10 Ω</m:t></m:r></m:oMath></span>
+                  </span> 
+                  على التوالي، تكون المقاومة المكافئة لهما:
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>5 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>10 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>15 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>3.33 Ω</span></div>
+                </div>
+              </div>
+              
+              <!-- رسم التوالي -->
+              <div class="media-container shrink-0 order-2 flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 rounded-xl" style="width: 210px; min-height: 105px;">
+                <div class="media-content-holder w-full h-full flex items-center justify-center overflow-hidden">
+                  <svg class="max-w-full max-h-full block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 80" width="250" height="80">
+                    <line x1="15" y1="40" x2="55" y2="40" stroke="#000" stroke-width="2.5"></line>
+                    <rect x="55" y="25" width="45" height="30" fill="white" stroke="#000" stroke-width="2.5" rx="3"></rect>
+                    <line x1="100" y1="40" x2="140" y2="40" stroke="#000" stroke-width="2.5"></line>
+                    <rect x="140" y="25" width="45" height="30" fill="white" stroke="#000" stroke-width="2.5" rx="3"></rect>
+                    <line x1="185" y1="40" x2="235" y2="40" stroke="#000" stroke-width="2.5"></line>
+                    <text x="77" y="20" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">5Ω</text>
+                    <text x="162" y="20" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">10Ω</text>
+                  </svg>
+                </div>
+                <div class="media-toolbar no-print">
+                  <button type="button" class="media-btn media-btn-replace" title="استبدال"><span>📁</span><span>استبدال</span></button>
+                  <button type="button" class="media-btn media-btn-edit" title="تعديل"><span>✏️</span><span>تعديل</span></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 4 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="3" data-qindex="4">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">4.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  أي من العوامل الآتية لا يتوقف عليها مقدار مقاومة موصل أومي منتظم المقطع عند ثبوت درجة الحرارة؟
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>طول الموصل</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>مساحة مقطع الموصل</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>نوع مادة الموصل</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>فرق الجهد الكهربي بين طرفيه</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 5 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2" data-qindex="5">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">5.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  مقاومتان متساويتان قيمة كل منهما 
+                  <span class="math-expr" data-latex="10\,\Omega">\(10\,\Omega\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>10 Ω</m:t></m:r></m:oMath></span></span> 
+                  موصلتان على التوازي، فإن المقاومة المكافئة لهما تساوي:
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>20 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>10 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>5 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>2 Ω</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 6 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="0" data-qindex="6">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">6.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  إذا كانت المقاومة النوعية لمادة سلك 
+                  <span class="math-expr" data-latex="\rho_e = 10^{-6}\,\Omega\cdot\text{m}">
+                    \(\rho_e = 10^{-6}\,\Omega\cdot\text{m}\)
+                    <span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:sSub><m:e><m:r><m:t>ρ</m:t></m:r></m:e><m:sub><m:r><m:t>e</m:t></m:r></m:sub></m:sSub><m:r><m:t>=10</m:t></m:r><m:sSup><m:e><m:r><m:t></m:t></m:r></m:e><m:sup><m:r><m:t>-6</m:t></m:r></m:sup></m:sSup><m:r><m:t> Ω·m</m:t></m:r></m:oMath></span>
+                  </span>، 
+                  وطوله 
+                  <span class="math-expr" data-latex="10\,\text{m}">\(10\,\text{m}\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>10 m</m:t></m:r></m:oMath></span></span>، 
+                  ومساحة مقطعه 
+                  <span class="math-expr" data-latex="10^{-6}\,\text{m}^2">\(10^{-6}\,\text{m}^2\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>10</m:t></m:r><m:sSup><m:e><m:r><m:t></m:t></m:r></m:e><m:sup><m:r><m:t>-6</m:t></m:r></m:sup></m:sSup><m:r><m:t> m</m:t></m:r><m:sSup><m:e><m:r><m:t></m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup></m:oMath></span></span>، 
+                  فإن مقاومة السلك تساوي:
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>10 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>1 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>100 Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>0.1 Ω</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 7 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2" data-qindex="7">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">7.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  سُحب سلك معدني بانتظام حتى ازداد طوله إلى ثلاثة أمثال طوله الأصلي، فإن مقاومته الكهربية تصبح:
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>3R</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>6R</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>9R</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>(1/3)R</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 8 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="1" data-qindex="8">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">8.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  ما هي وحدة قياس المقاومة النوعية 
+                  <span class="math-expr" data-latex="(\rho_e)">\((\rho_e)\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:sSub><m:e><m:r><m:t>ρ</m:t></m:r></m:e><m:sub><m:r><m:t>e</m:t></m:r></m:sub></m:sSub></m:oMath></span></span> 
+                  لمادة موصل في النظام الدولي؟
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>Ω</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>Ω·m</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>Ω / m</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>S / m</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 9 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="2" data-qindex="9">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">9.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  إذا مر تيار شدته 
+                  <span class="math-expr" data-latex="2\,\text{A}">\(2\,\text{A}\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>2 A</m:t></m:r></m:oMath></span></span> 
+                  في مقاومة قيمتها 
+                  <span class="math-expr" data-latex="6\,\Omega">\(6\,\Omega\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>6 Ω</m:t></m:r></m:oMath></span></span>، 
+                  فإن فرق الجهد بين طرفي المقاومة يساوي:
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>3 V</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>8 V</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>12 V</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>36 V</span></div>
+                </div>
+              </div>
+
+              <div class="media-container shrink-0 order-2 flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 rounded-xl" style="width: 210px; min-height: 105px;">
+                <div class="media-content-holder w-full h-full flex items-center justify-center overflow-hidden">
+                  <svg class="max-w-full max-h-full block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="200" height="100">
+                    <line x1="25" y1="50" x2="65" y2="50" stroke="#000" stroke-width="2.5"></line>
+                    <rect x="65" y="32" width="70" height="36" fill="white" stroke="#000" stroke-width="2.5" rx="3"></rect>
+                    <line x1="135" y1="50" x2="175" y2="50" stroke="#000" stroke-width="2.5"></line>
+                    <text x="100" y="55" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#000">6Ω</text>
+                  </svg>
+                </div>
+                <div class="media-toolbar no-print">
+                  <button type="button" class="media-btn media-btn-replace" title="استبدال"><span>📁</span><span>استبدال</span></button>
+                  <button type="button" class="media-btn media-btn-edit" title="تعديل"><span>✏️</span><span>تعديل</span></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- السؤال 10 -->
+        <div class="question-block relative rounded-lg break-inside-avoid group transition-all duration-300 overflow-hidden hover:shadow-sm interactive-q" draggable="false" style="border-color: rgb(0, 0, 0); border-radius: 8px; border-style: solid; border-width: 1px; background-color: rgba(255, 255, 255, 0.95); padding: 16px; box-shadow: rgba(0, 0, 0, 0.2) 5px 5px 0px 0px;" data-correct="1" data-qindex="10">
+          <div class="flex gap-3 mb-1 relative z-10">
+            <span class="text-blue-700 font-extrabold select-none shrink-0 text-lg">10.</span>
+            <div class="flex-grow flex flex-col md:flex-row gap-4 items-start">
+              <div class="flex-grow flex flex-col gap-3 order-1 w-full">
+                <div class="w-full font-semibold text-slate-900 leading-relaxed">
+                  إذا زادت التوصيلية الكهربية 
+                  <span class="math-expr" data-latex="(\sigma)">\((\sigma)\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>σ</m:t></m:r></m:oMath></span></span> 
+                  لمادة موصل إلى الضعف، فإن المقاومة النوعية 
+                  <span class="math-expr" data-latex="(\rho_e)">\((\rho_e)\)<span class="omml-data"><m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:sSub><m:e><m:r><m:t>ρ</m:t></m:r></m:e><m:sub><m:r><m:t>e</m:t></m:r></m:sub></m:sSub></m:oMath></span></span> 
+                  لها:
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 text-slate-700">
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[A]</span><span>تزداد للضعف</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[B]</span><span>تقل إلى النصف</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[C]</span><span>تظل ثابتة</span></div>
+                  <div class="flex items-center rounded-lg px-3 py-2 border border-slate-200 transition-colors bg-white hover:bg-green-50"><span class="font-bold ml-2 shrink-0 inline-block text-blue-700 w-6 text-sm" dir="ltr">[D]</span><span>تزداد 4 أمثال</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- قسم نموذج الإجابة والشرح التفصيلي للحل -->
+      <section id="answers-explanation-section" class="mt-14 pt-8 border-t-2 border-dashed border-slate-300 relative z-10 page-break">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg">💡</div>
+          <div>
+            <h2 class="text-xl font-extrabold text-blue-900">نموذج الإجابة وشرح خطوات الحل التفصيلية</h2>
+            <p class="text-xs text-slate-500">تفسير كل اختيار وتوضيح القوانين الفيزيائية المعتمدة</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <!-- شرح س 1 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (1): وحدة قياس المقاومة الكهربية</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[C] الأوم (Ω)</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>التفسير:</strong> الأوم (Ω) هو وحدة قياس المقاومة الكهربية في النظام الدولي للوحدات (SI)، ويكافئ فولت/أمبير. أما الأمبير فهو لشدة التيار، والفولت لفرق الجهد، والوات للقدرة.
+            </p>
+          </div>
+
+          <!-- شرح س 2 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (2): زيادة طول السلك إلى الضعف</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[B] 2R</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>خطوات الحل:</strong> من القانون \(R = \rho_e \frac{L}{A}\)، تتناسب المقاومة طردياً مع طول السلك (\(R \propto L\)) عند ثبوت مساحة المقطع والمقاومة النوعية. وبما أن الطول زاد إلى الضعف (\(L_2 = 2L_1\)) ومساحة المقطع ثابتة، فإن المقاومة تزداد للضعف أيضاً وتصبح \(2R\).
+            </p>
+          </div>
+
+          <!-- شرح س 3 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (3): التوصيل على التوالي</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[C] 15 Ω</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>خطوات الحل:</strong> في التوصيل على التوالي، المقاومة المكافئة هي المجموع الجبري للمقاومات: <br>
+              \(R_{eq} = R_1 + R_2 = 5\,\Omega + 10\,\Omega = 15\,\Omega\).
+            </p>
+          </div>
+
+          <!-- شرح س 4 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (4): العوامل التي تتوقف عليها المقاومة</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[D] فرق الجهد بين طرفي الموصل</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>التفسير:</strong> مقاومة الموصل الأومي هي خاصية فيزيائية هندسية تعتمد فقط على: (الطول، مساحة المقطع، نوع المادة، درجة الحرارة). وتغير فرق الجهد أو شدة التيار يغير أحدهما بالنسبة للآخر مع بقاء المقاومة ثابتة حسب قانون أوم.
+            </p>
+          </div>
+
+          <!-- شرح س 5 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (5): مقاومتان متساويتان على التوازي</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[C] 5 Ω</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>خطوات الحل:</strong> عند توصيل مقاومتين متساويتين على التوازي تكون المقاومة المكافئة قيمة المقاومة الواحدة مقسومة على عددهما: <br>
+              \(R_{eq} = \frac{R}{n} = \frac{10}{2} = 5\,\Omega\).
+            </p>
+          </div>
+
+          <!-- شرح س 6 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (6): حساب مقاومة السلك</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[A] 10 Ω</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>خطوات الحل:</strong> بالتعويض في القانون المباشر: <br>
+              \(R = \rho_e \cdot \frac{L}{A} = 10^{-6} \times \frac{10}{10^{-6}} = 10\,\Omega\).
+            </p>
+          </div>
+
+          <!-- شرح س 7 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (7): إعادة تشكيل / سحب سلك</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[C] 9R</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>خطوات الحل:</strong> عند سحب السلك يظل الحجم ثابتاً، فإذا زاد الطول إلى 3 أمثال (\(L_2 = 3L_1\))، فإن مساحة المقطع تقل إلى الثلث (\(A_2 = \frac{1}{3}A_1\)).<br>
+              وبالتالي: \(\frac{R_2}{R_1} = \frac{L_2^2}{L_1^2} = (3)^2 = 9 \implies R_2 = 9R\).
+            </p>
+          </div>
+
+          <!-- شرح س 8 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (8): وحدة قياس المقاومة النوعية</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[B] Ω·m</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>التفسير:</strong> من العلاقة \(\rho_e = \frac{R \cdot A}{L}\)، وحدة القياس هي: \(\frac{\Omega \cdot \text{m}^2}{\text{m}} = \Omega\cdot\text{m}\) (أوم في المتر).
+            </p>
+          </div>
+
+          <!-- شرح س 9 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (9): فرق الجهد من قانون أوم</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[C] 12 V</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>خطوات الحل:</strong> بتطبيق قانون أوم: <br>
+              \(V = I \times R = 2\,\text{A} \times 6\,\Omega = 12\,\text{V}\).
+            </p>
+          </div>
+
+          <!-- شرح س 10 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">السؤال (10): العلاقة بين المقاومة النوعية والتوصيلية</span>
+              <span class="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-100 text-emerald-800">[B] تقل إلى النصف</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              <strong>خطوات الحل:</strong> المقاومة النوعية هي مقلوب التوصيلية الكهربية (\(\rho_e = \frac{1}{\sigma}\)). وبما أن العلاقة عكسية وتضاعفت التوصيلية إلى الضعف (\(2\sigma\))، فإن المقاومة النوعية تقل بالضرورة إلى النصف.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- عبارة الختام -->
+      <footer class="closing-phrase mt-12 mb-8 flex items-center justify-center gap-4 text-blue-700 no-break relative z-10">
+        <div class="h-0.5 flex-grow bg-gradient-to-r from-transparent to-blue-300"></div>
+        <div class="font-bold text-lg italic px-4 select-none whitespace-nowrap">مع تمنياتي لكم بالتوفيق والنجاح</div>
+        <div class="h-0.5 flex-grow bg-gradient-to-l from-transparent to-blue-300"></div>
+      </footer>
+    </div>
+    <div id="result-container" class="mt-8 hidden no-print"></div>
+  </div>
+
+  <!-- عنصر إدخال الملفات المخفي -->
+  <input type="file" id="media-file-input" accept="image/*,.svg" class="hidden">
+
+  <!-- نافذة Vector Studio المنبثقة -->
+  <div id="vectorStudioModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4 transition-all duration-300 no-print">
+    <div class="bg-white w-full max-w-7xl h-[94vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+      <div class="flex items-center justify-between px-5 py-3 bg-slate-900 text-white shrink-0 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-black text-sm">VS</div>
+          <div>
+            <h2 class="text-base font-bold leading-tight">محرر Vector Studio</h2>
+            <p class="text-xs text-slate-400">عدّل الرسم ثم احفظه ليتم تطبيقه فوراً داخل صفحة الاختبار</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="saveExportBtn" type="button" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-sm rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+            <span>💾 تطبيق التعديلات</span>
+          </button>
+          <button id="closeStudioBtn" type="button" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-sm rounded-lg transition-all">
+            ✕ إلغاء
+          </button>
+        </div>
+      </div>
+      <div class="flex-grow w-full h-full relative bg-slate-100 flex items-center justify-center">
+        <div id="iframeLoader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 z-10 gap-3 text-slate-600">
+          <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-sm font-semibold">جاري فتح وتجهيز الاستوديو...</span>
+        </div>
+        <iframe id="vectorStudioIframe" class="w-full h-full border-0 relative z-20" allow="clipboard-read; clipboard-write"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====================================================
+    // 1. نظام الاختبار التفاعلي واحتساب النتائج
+    // ====================================================
+    window.addEventListener('load', () => {
+      const questions = document.querySelectorAll('.interactive-q');
+      let score = 0;
+      let answeredCount = 0;
+      const total = questions.length;
+
+      questions.forEach(q => {
+        const options = q.querySelectorAll('.grid > div');
+        const correctIdx = parseInt(q.getAttribute('data-correct'));
+
+        options.forEach((opt, idx) => {
+          opt.classList.add('option-btn');
+          opt.addEventListener('click', () => {
+            if (q.hasAttribute('data-answered')) return;
+            
+            q.setAttribute('data-answered', 'true');
+            answeredCount++;
+            
+            options.forEach(o => o.classList.add('answered'));
+
+            if (idx === correctIdx) {
+              opt.classList.add('correct');
+              score++;
+            } else {
+              opt.classList.add('wrong');
+              options[correctIdx].classList.add('reveal-correct');
+            }
+
+            if (answeredCount === total) {
+              setTimeout(showFinalResult, 600);
+            }
+          });
+        });
+      });
+
+      function showFinalResult() {
+        const percent = (score / total) * 100;
+        const container = document.getElementById('result-container');
+        container.classList.remove('hidden');
+        container.classList.add('animate-slide-up');
+        
+        const isSuccess = percent >= 60;
+        
+        container.innerHTML = `
+          <div class="p-8 rounded-3xl text-center border-4 ${isSuccess ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'} shadow-xl">
+            <div class="text-6xl mb-3">${isSuccess ? '🎉' : '📚'}</div>
+            <h2 class="text-2xl font-black mb-2 ${isSuccess ? 'text-green-700' : 'text-red-700'}">
+              ${isSuccess ? 'تهانينا على إتمام الاختبار بنجاح!' : 'حظاً أوفر، يمكنك مراجعة الشرح والمحاولة مجدداً'}
+            </h2>
+            <p class="text-base text-gray-600 mb-4">أجبت بشكل صحيح على ${score} من أصل ${total} أسئلة</p>
+            <div class="inline-block px-8 py-3 rounded-2xl bg-white shadow-inner border-2 ${isSuccess ? 'border-green-200' : 'border-red-200'}">
+              <span class="text-4xl font-black ${isSuccess ? 'text-green-600' : 'text-red-600'}">${percent.toFixed(1)}%</span>
+            </div>
+            <div class="mt-4">
+              <a href="#answers-explanation-section" class="inline-flex items-center gap-1.5 text-sm font-bold text-blue-700 hover:underline">
+                <span>انتقل لأسفل لمراجعة شرح وخطوات كل سؤال بالتفصيل ⬇️</span>
+              </a>
+            </div>
+          </div>
+        `;
+
+        if (isSuccess && window.confetti) {
+          confetti({
+            particleCount: 70,
+            spread: 60,
+            origin: { y: 0.7 }
+          });
+        }
+        
+        container.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      setupMediaManager();
+      setupExportTools();
+    });
+
+    // ====================================================
+    // 2. أدوات التصدير: Word (مع OMML)، PDF، و CSV
+    // ====================================================
+    function setupExportTools() {
+      const btnCopyWord = document.getElementById('btn-copy-word');
+      const btnExportPdf = document.getElementById('btn-export-pdf');
+      const btnExportCsv = document.getElementById('btn-export-csv');
+      const answersToggle = document.getElementById('include-answers-toggle');
+      const answersSection = document.getElementById('answers-explanation-section');
+
+      // --- أ. نسخ المحتوى لـ Word مع دعم صيغ OMML ---
+      btnCopyWord.addEventListener('click', async () => {
+        try {
+          const clone = document.getElementById('quiz-printable-area').cloneNode(true);
+          
+          // إزالة الأدوات التفاعلية وغير الضرورية للوورد
+          clone.querySelectorAll('.no-print, .media-toolbar').forEach(el => el.remove());
+
+          // تفعيل ظهور صيغ معادلات OMML داخل النسخة ليتعرف عليها Word
+          clone.querySelectorAll('.omml-data').forEach(omml => {
+            omml.style.display = 'inline';
+          });
+          clone.querySelectorAll('mjx-container').forEach(mjx => {
+            mjx.remove(); // إزالة تمثيل MathJax HTML الصوري والاكتفاء بـ OMML لضمان نظافة المحرر
+          });
+
+          // إضافة ترويسة HTML متوافقة مع محرر Word وأوفيس
+          const wordHtml = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+                  xmlns:w="urn:schemas-microsoft-com:office:word" 
+                  xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" 
+                  xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+              <meta charset="utf-8">
+              <title>اختبار المقاومات الكهربية</title>
+              <style>
+                body { font-family: 'Calibri', 'Simplified Arabic', sans-serif; direction: rtl; text-align: right; }
+                table { border-collapse: collapse; width: 100%; }
+                .question-block { border: 1px solid #000; padding: 12px; margin-bottom: 14px; }
+              </style>
+            </head>
+            <body>
+              ${clone.innerHTML}
+            </body>
+            </html>
+          `;
+
+          const blobHtml = new Blob([wordHtml], { type: 'text/html' });
+          const blobText = new Blob([clone.innerText], { type: 'text/plain' });
+
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/html': blobHtml,
+              'text/plain': blobText
+            })
+          ]);
+
+          const origText = btnCopyWord.innerHTML;
+          btnCopyWord.innerHTML = '<span>✅</span><span>تم النسخ بنجاح!</span>';
+          btnCopyWord.classList.replace('bg-blue-600', 'bg-emerald-600');
+          setTimeout(() => {
+            btnCopyWord.innerHTML = origText;
+            btnCopyWord.classList.replace('bg-emerald-600', 'bg-blue-600');
+          }, 2500);
+        } catch (err) {
+          console.error(err);
+          alert('تعذر الوصول للحافظة تلقائياً. تأكد من إعطاء الصلاحية للمتصفح.');
+        }
+      });
+
+      // --- ب. تصدير PDF مع تفعيل أو تعطيل قسم الإجابات ---
+      btnExportPdf.addEventListener('click', () => {
+        if (!answersToggle.checked) {
+          answersSection.classList.add('hide-in-pdf');
+        } else {
+          answersSection.classList.remove('hide-in-pdf');
+        }
+        window.print();
+      });
+
+      // --- ج. تصدير الأسئلة والإجابات كملف CSV ---
+      btnExportCsv.addEventListener('click', () => {
+        const rows = [
+          ['رقم السؤال', 'نص السؤال', 'الخيار A', 'الخيار B', 'الخيار C', 'الخيار D', 'رمز الإجابة الصحيحة', 'شرح الإجابة والحل']
+        ];
+
+        const qBlocks = document.querySelectorAll('.interactive-q');
+        const explanationItems = document.querySelectorAll('#answers-explanation-section > div > div');
+
+        const letterMap = ['A', 'B', 'C', 'D'];
+
+        qBlocks.forEach((q, idx) => {
+          const qIndex = idx + 1;
+          const qText = q.querySelector('.order-1 > div:first-child').innerText.replace(/\s+/g, ' ').trim();
+          const options = Array.from(q.querySelectorAll('.grid > div')).map(opt => {
+            return opt.innerText.replace(/^\[[A-D]\]/, '').trim();
+          });
+
+          const correctIndex = parseInt(q.getAttribute('data-correct'));
+          const correctLetter = letterMap[correctIndex] || '';
+
+          let explanationText = '';
+          if (explanationItems[idx]) {
+            explanationText = explanationItems[idx].querySelector('p').innerText.replace(/\s+/g, ' ').trim();
+          }
+
+          rows.push([
+            qIndex,
+            `"${qText.replace(/"/g, '""')}"`,
+            `"${(options[0] || '').replace(/"/g, '""')}"`,
+            `"${(options[1] || '').replace(/"/g, '""')}"`,
+            `"${(options[2] || '').replace(/"/g, '""')}"`,
+            `"${(options[3] || '').replace(/"/g, '""')}"`,
+            `"${correctLetter}"`,
+            `"${explanationText.replace(/"/g, '""')}"`
+          ]);
+        });
+
+        // تضمين Byte Order Mark (BOM) لضمان ظهور الأحرف العربية بشكل سليم في Excel
+        const csvContent = '\uFEFF' + rows.map(e => e.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'اختبار_المقاومات_الكهربية.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // ====================================================
+    // 3. إدارة الوسائط و Vector Studio
+    // ====================================================
+    const VECTOR_STUDIO_ORIGIN = 'https://vector-studio-2027.vercel.app';
+    const modal = document.getElementById('vectorStudioModal');
+    const iframe = document.getElementById('vectorStudioIframe');
+    const iframeLoader = document.getElementById('iframeLoader');
+    const fileInput = document.getElementById('media-file-input');
+    const saveExportBtn = document.getElementById('saveExportBtn');
+    const closeStudioBtn = document.getElementById('closeStudioBtn');
+
+    let activeMediaContainer = null;
+    let pendingMessageData = null;
+
+    function setupMediaManager() {
+      document.querySelectorAll('.media-container').forEach(container => {
+        const replaceBtn = container.querySelector('.media-btn-replace');
+        const editBtn = container.querySelector('.media-btn-edit');
+
+        if (replaceBtn) {
+          replaceBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activeMediaContainer = container;
+            fileInput.value = '';
+            fileInput.click();
+          });
+        }
+
+        if (editBtn) {
+          editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activeMediaContainer = container;
+            openVectorStudioForContainer(container);
+          });
+        }
+      });
+    }
+
+    function openVectorStudioForContainer(container) {
+      const holder = container.querySelector('.media-content-holder') || container;
+      const media = holder.querySelector('svg, img');
+      if (!media) return;
+
+      const isSvg = media.tagName.toLowerCase() === 'svg';
+
+      if (isSvg) {
+        if (!media.getAttribute('xmlns')) {
+          media.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        }
+        const svgString = new XMLSerializer().serializeToString(media);
+        pendingMessageData = {
+          type: 'IMPORT_SVG',
+          data: { svgString: svgString }
+        };
+      } else {
+        pendingMessageData = {
+          type: 'IMPORT_IMAGE',
+          data: { url: media.src }
+        };
+      }
+
+      iframeLoader.style.display = 'flex';
+      modal.classList.remove('hidden');
+      iframe.src = VECTOR_STUDIO_ORIGIN;
+    }
+
+    function sendDataToStudio() {
+      if (pendingMessageData && iframe.contentWindow) {
+        iframe.contentWindow.postMessage(pendingMessageData, VECTOR_STUDIO_ORIGIN);
+        pendingMessageData = null;
+      }
+    }
+
+    function closeStudioModal() {
+      modal.classList.add('hidden');
+      iframeLoader.style.display = 'flex';
+      iframe.src = 'about:blank';
+    }
+
+    closeStudioBtn.addEventListener('click', closeStudioModal);
+
+    saveExportBtn.addEventListener('click', () => {
+      if (!iframe.contentWindow || !activeMediaContainer) return;
+      const holder = activeMediaContainer.querySelector('.media-content-holder') || activeMediaContainer;
+      const currentMedia = holder.querySelector('svg, img');
+      const isSvg = currentMedia && currentMedia.tagName.toLowerCase() === 'svg';
+
+      iframe.contentWindow.postMessage({
+        type: 'REQUEST_EXPORT',
+        data: {
+          format: isSvg ? 'svg' : 'png',
+          scale: 2,
+          closeOnExport: true
+        }
+      }, VECTOR_STUDIO_ORIGIN);
+    });
+
+    window.addEventListener('message', (event) => {
+      if (event.origin !== VECTOR_STUDIO_ORIGIN) return;
+      if (event.source !== iframe.contentWindow) return;
+
+      const { type, payload } = event.data || {};
+
+      if (type === 'VECTOR_STUDIO_READY') {
+        iframeLoader.style.display = 'none';
+        sendDataToStudio();
+      }
+
+      if (type === 'VECTOR_STUDIO_EXPORT_RESULT') {
+        applyResultToContainer(payload);
+      }
+
+      if (type === 'VECTOR_STUDIO_CLOSE') {
+        closeStudioModal();
+      }
+    });
+
+    function applyResultToContainer(payload) {
+      if (!activeMediaContainer || !payload) return;
+      const holder = activeMediaContainer.querySelector('.media-content-holder') || activeMediaContainer;
+      const currentMedia = holder.querySelector('svg, img');
+
+      if (payload.format === 'svg' && payload.svgString) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(payload.svgString, 'image/svg+xml');
+        const newSvg = doc.querySelector('svg');
+        if (newSvg) {
+          newSvg.classList.add('max-w-full', 'max-h-full', 'block');
+          if (currentMedia) currentMedia.replaceWith(newSvg);
+          else holder.appendChild(newSvg);
+        }
+      } else if (payload.dataUrl) {
+        if (currentMedia && currentMedia.tagName.toLowerCase() === 'img') {
+          currentMedia.src = payload.dataUrl;
+        } else {
+          const newImg = document.createElement('img');
+          newImg.src = payload.dataUrl;
+          newImg.className = 'max-w-full max-h-full object-contain block';
+          if (currentMedia) currentMedia.replaceWith(newImg);
+          else holder.appendChild(newImg);
+        }
+      }
+      closeStudioModal();
+    }
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !activeMediaContainer) return;
+
+      const holder = activeMediaContainer.querySelector('.media-content-holder') || activeMediaContainer;
+      const currentMedia = holder.querySelector('svg, img');
+      const isSvgFile = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+
+      const reader = new FileReader();
+
+      if (isSvgFile) {
+        reader.onload = (event) => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(event.target.result, 'image/svg+xml');
+          const newSvg = doc.querySelector('svg');
+          if (newSvg) {
+            newSvg.classList.add('max-w-full', 'max-h-full', 'block');
+            if (currentMedia) currentMedia.replaceWith(newSvg);
+            else holder.appendChild(newSvg);
+          }
+        };
+        reader.readAsText(file);
+      } else {
+        reader.onload = (event) => {
+          if (currentMedia && currentMedia.tagName.toLowerCase() === 'img') {
+            currentMedia.src = event.target.result;
+          } else {
+            const newImg = document.createElement('img');
+            newImg.src = event.target.result;
+            newImg.className = 'max-w-full max-h-full object-contain block';
+            if (currentMedia) currentMedia.replaceWith(newImg);
+            else holder.appendChild(newImg);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
+</body>
+</html>

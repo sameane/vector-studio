@@ -95,6 +95,7 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
 .layer-row{display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:12px;color:#c5cbd8;margin-bottom:3px;user-select:none;border:1px solid transparent}
 .layer-row:hover{background:#1d222e;border-color:#2a3142}
 .layer-row.active{background:#253759;color:#fff;border-color:#4c8dff/40}
+.layer-row.multi-selected{background:#263b34;color:#fff;border-color:#42c89b/45}
 .lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lbtn{background:none;border:0;color:#7e879b;cursor:pointer;padding:3px 5px;border-radius:5px;display:flex;line-height:1;font-size:12px}
 .lbtn:hover{color:#fff;background:#2d3445}
@@ -139,6 +140,7 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
   #zoomBar{bottom:8px;left:8px}
 }
 @media (max-width: 420px){
+  #appCredit{font-size:9px;padding-top:2px;padding-bottom:2px}
   #sidebar{
     height:auto;
     overflow-x:visible;
@@ -160,7 +162,13 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
   <header id="toolbar" dir="ltr" class="h-12 shrink-0 bg-panel border-b border-line flex items-center px-3 gap-1">
     <div class="flex items-center gap-2 px-1 select-none">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.3l7.1-.7z" fill="#4c8dff"/></svg>
-      <span class="font-extrabold text-sm tracking-wide text-white">Vector Studio</span>
+      <div class="flex flex-col leading-tight">
+        <span class="font-extrabold text-sm tracking-wide text-white">Vector Studio</span>
+        <div class="flex flex-col">
+          <span class="text-[9px] text-muted">. اعــــــداد وتــــصــمـيــم .</span>
+          <a href="https://mr-abdelrhuman-nagy.vercel.app/" target="_blank" rel="noopener noreferrer" class="text-[9px] text-muted hover:text-accent2 transition-colors"> . مستر. عبدالرحمن ناجي .</a>
+        </div>
+      </div>
       <span class="text-[10px] bg-accent/20 text-accent2 px-1.5 py-0.5 rounded font-bold">PRO</span>
     </div>
     <div class="vsep"></div>
@@ -310,6 +318,10 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
           <div id="ungroupSec" class="hidden mb-2">
             <button id="btnUngroup" class="btn-s w-full text-accent2 border-accent/40 hover:bg-accent/10">🧩 فك التجميع (Ungroup إلى مسارات فردية)</button>
           </div>
+          <div id="groupSec" class="hidden mb-2">
+            <button id="btnGroup" class="btn-s w-full text-accent2 border-accent/40 hover:bg-accent/10">🧩 تجميع العناصر المحددة</button>
+            <p class="text-[10px] text-muted mt-1">استخدم Shift + النقر لتحديد أكثر من عنصر.</p>
+          </div>
           <div id="convertPathSec" class="hidden mb-2">
             <button id="btnConvertToPath" class="btn-s w-full text-accent2 border-accent/40 hover:bg-accent/10">📈 تحويل لشكل حر (مسار قابل للتحرير)</button>
           </div>
@@ -402,7 +414,10 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
       <div id="panelLayers" class="hidden flex-1 flex flex-col min-h-0 p-3">
         <div class="flex items-center justify-between mb-2 pb-2 border-b border-line shrink-0">
           <span class="font-bold text-slate-300 text-xs">📁 ترتيب الطبقات والعناصر</span>
-          <span class="text-[10.5px] text-muted">اسحب للترتيب</span>
+          <div class="flex items-center gap-2">
+            <span class="text-[10.5px] text-muted">Shift + نقر للتحديد المتعدد</span>
+            <button id="btnGroupLayers" class="btn-s text-accent2 border-accent/40 hover:bg-accent/10" disabled>🧩 تجميع</button>
+          </div>
         </div>
         <div id="layersList" class="flex-1 overflow-y-auto pr-0.5"></div>
       </div>
@@ -420,6 +435,10 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
 
     </aside>
   </div>
+  <footer id="appCredit" dir="rtl" class="shrink-0 bg-panel border-t border-line px-3 py-1 text-center text-[10px] leading-relaxed text-muted">
+    <span>. اعــــــداد وتــــصــمـيــم .</span>
+    <a href="https://mr-abdelrhuman-nagy.vercel.app/" target="_blank" rel="noopener noreferrer" class="mr-1 text-accent2 hover:text-white transition-colors">. مستر. عبدالرحمن ناجي .</a>
+  </footer>
 </div>
 
 <!-- ======= نافذة قص الصورة (Crop Modal) ======= -->
@@ -508,10 +527,10 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
 
       <div class="bg-panel2 p-3.5 rounded-xl border border-line space-y-2">
         <h3 class="font-bold text-accent2 text-sm">1️⃣ إرسال البيانات من تطبيقك إلى Vector Studio (الأوامر الواردة):</h3>
-        <p class="text-slate-400">أرسل رسالة إلى الـ iframe عبر <code>iframe.contentWindow.postMessage(message, targetOrigin)</code>. استخدم أصل التطبيق الفعلي بدلاً من <code>*</code> متى أمكن:</p>
+        <p class="text-slate-400">أرسل رسالة إلى الـ iframe عبر <code>iframe.contentWindow.postMessage(message, editorOrigin)</code>، حيث <code>editorOrigin</code> هو أصل صفحة Vector Studio داخل الإطار، وليس أصل التطبيق الحاضن. استخدم الأصل الفعلي بدلاً من <code>*</code>:</p>
         <ul class="list-disc list-inside space-y-1.5 text-slate-300 font-mono text-[11px]">
-          <li><b>IMPORT_IMAGE:</b> لإدراج صورة عادية (Base64 أو URL):<br>
-            <code class="text-emerald-400 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'IMPORT_IMAGE', data: { url: 'https://example.com/logo.png' } }</code>
+          <li><b>IMPORT_IMAGE:</b> لإدراج صورة عادية (عنوان URL أو Data URL أو كائن <code>Blob</code>/<code>File</code>). الصور من رابط خارجي تحتاج إعداد CORS لتعمل في تصدير PNG؛ أرسل الصورة كـ Blob أو Data URL لتفادي ذلك:<br>
+            <code class="text-emerald-400 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'IMPORT_IMAGE', data: { file: imageFile } }</code>
           </li>
           <li><b>IMPORT_SVG:</b> لاستبدال مساحة العمل بكود SVG متجهي كامل:<br>
             <code class="text-emerald-400 bg-black/40 px-2 py-0.5 rounded block mt-0.5">{ type: 'IMPORT_SVG', data: { svgString: '&lt;svg&gt;...&lt;/svg&gt;' } }</code>
@@ -530,7 +549,7 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
 
       <div class="bg-panel2 p-3.5 rounded-xl border border-line space-y-2">
         <h3 class="font-bold text-emerald-400 text-sm">2️⃣ استقبال النتائج في تطبيقك (الأحداث الصادرة):</h3>
-        <p class="text-slate-400">استمع للأحداث الصادرة من الاستوديو عبر <code>window.addEventListener('message', callback)</code>. كل رسالة تحتوي <code>type</code> و<code>payload</code> و<code>timestamp</code>؛ افحص <code>event.source</code> و<code>event.origin</code> قبل الوثوق بالمرسل.</p>
+        <p class="text-slate-400">استمع للأحداث الصادرة من الاستوديو عبر <code>window.addEventListener('message', callback)</code>. كل رسالة تحتوي <code>type</code> و<code>payload</code> و<code>timestamp</code> (وفق معايير التكامل في المنصات التعليمية التفاعلية كالتي يقدمها مستر. عبدالرحمن ناجي https://mr-abdelrhuman-nagy.vercel.app/ لتطوير التطبيقات التعليمية)؛ افحص <code>event.source</code> و<code>event.origin</code> قبل الوثوق بالمرسل.</p>
         <ul class="list-disc list-inside space-y-1.5 text-slate-300 font-mono text-[11px]">
           <li><b>VECTOR_STUDIO_READY:</b> يُرسل تلقائياً فور اكتمال تحميل المحرر لتبدأ بإرسال البيانات.</li>
           <li><b>VECTOR_STUDIO_EXPORT_RESULT:</b> نتيجة التصدير. يحوي <code>payload.format</code> وقياسات الصورة؛ ويحتوي <code>payload.svgString</code> لصيغة SVG أو <code>payload.dataUrl</code> لصيغة PNG:<br>
@@ -538,6 +557,7 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
           </li>
           <li><b>VECTOR_STUDIO_CLOSE:</b> يصدر بعد نتيجة التصدير عند استخدام زر «إلى التطبيق الأب» أو إرسال <code>closeOnExport: true</code>. على التطبيق الأب إخفاء/إزالة الـ iframe؛ لا يستطيع iframe إغلاق الصفحة الحاضنة.</li>
           <li><b>VECTOR_STUDIO_EXPORT_ERROR:</b> فشل التصدير؛ يحوي <code>payload.format</code> و<code>payload.message</code>.</li>
+          <li><b>VECTOR_STUDIO_IMAGE_IMPORTED</b> و<b>VECTOR_STUDIO_IMPORT_ERROR:</b> تأكيد استيراد الصورة أو الإبلاغ عن سبب فشله. نتيجة الاستيراد توضح <code>corsEnabled</code>؛ وعند كونها <code>false</code> قد يتعذر تصدير PNG بسبب سياسة CORS.</li>
           <li><b>VECTOR_STUDIO_CHANGE:</b> تعديل في اللوحة؛ يحوي <code>payload.layerCount</code>.</li>
         </ul>
       </div>
@@ -550,20 +570,34 @@ input[type=range]{width:100%;accent-color:#4c8dff;cursor:pointer}
         <pre dir="ltr" id="integrationCodeBlock" class="p-3 bg-black/60 text-slate-200 font-mono text-[11px] rounded-lg overflow-x-auto select-text leading-relaxed">
 // 1. تضمين المحرر
 const iframe = document.querySelector('#vectorStudioIframe');
-const targetOrigin = 'https://your-site.com';
+const editorOrigin = new URL(iframe.src, location.href).origin;
 
 // 2. استقبال النتائج والأحداث من المحرر
 window.addEventListener('message', (event) => {
   if (event.source !== iframe.contentWindow) return;
-  if (event.origin !== targetOrigin) return;
+  if (event.origin !== editorOrigin) return;
   const { type, payload } = event.data || {};
 
   if (type === 'VECTOR_STUDIO_READY') {
-    // أصبح المحرر جاهزاً؛ مثال إرسال صورة إلى اللوحة
-    iframe.contentWindow.postMessage({
-      type: 'IMPORT_IMAGE',
-      data: { url: 'https://your-site.com/avatar.png' }
-    }, targetOrigin);
+    // أرسل Blob/File لتجنب قيود CORS الخاصة بروابط الصور الخارجية
+    fetch('/avatar.png')
+      .then(response => {
+        if (!response.ok) throw new Error('تعذر تحميل الصورة');
+        return response.blob();
+      })
+      .then(file => iframe.contentWindow.postMessage({
+        type: 'IMPORT_IMAGE',
+        data: { file }
+      }, editorOrigin))
+      .catch(console.error);
+  }
+
+  if (type === 'VECTOR_STUDIO_IMAGE_IMPORTED') {
+    console.log('تم استيراد الصورة:', payload.width, payload.height);
+  }
+
+  if (type === 'VECTOR_STUDIO_IMPORT_ERROR') {
+    console.error('تعذر استيراد الصورة:', payload.message);
   }
 
   if (type === 'VECTOR_STUDIO_EXPORT_RESULT') {
@@ -585,10 +619,14 @@ function exportPngAndCloseStudio() {
   iframe.contentWindow.postMessage({
     type: 'REQUEST_EXPORT',
     data: { format: 'png', scale: 2, closeOnExport: true }
-  }, targetOrigin);
+  }, editorOrigin);
 }
 </pre>
       </div>
+      <p dir="rtl" class="text-[10px] leading-relaxed text-slate-500">
+        اعداد وتصميم .
+        <a href="https://mr-abdelrhuman-nagy.vercel.app/" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-slate-300 transition-colors">. مستر. عبدالرحمن ناجي</a>
+      </p>
     </div>
 
     <div class="mt-4 pt-3 border-t border-line flex justify-end">
@@ -672,13 +710,13 @@ const state = {
   textAnchor: 'start', textDir: 'rtl', space: false
 };
 
-let selected = null, editing = null;
+let selected = null, selectedItems = [], editing = null;
 let penPts = [], penTmp = null, penActive = false;
 let drag = null, dragging = false, suppress = false, textEditor = null, dragLayerElm = null;
 
 /* إرشادات تفاعلية واضحة */
 const HINTS = {
-  select: '🖱️ <b>أداة التحديد:</b> انقر لاختيار أي عنصر • اسحب لتحريكه • اسحب مقابض الزوايا لتغيير حجمه • اضغط <b>Delete</b> لحذفه • استخدم <b>Ctrl + عجلة الماوس</b> للتكبير والتصغير.',
+  select: '🖱️ <b>أداة التحديد:</b> انقر لاختيار عنصر واسحبه لتحريكه • <b>Shift + النقر</b> لتحديد عدة عناصر وتحريكها معاً • <b>Ctrl + G</b> للتجميع وفك التجميع • اسحب مقابض الزوايا لتغيير الحجم.',
   direct: '✏️ <b>التحرير المباشر (A):</b> انقر على أي مسار لتحديده • <b>انقر على خط المسار لإضافة نقطة جديدة</b> • اسحب المربعات لتغيير الشكل • <b>اسحب الدوائر لضبط الانحناء</b> (اضغط Alt لكسر الزاوية).',
   hand: '✋ <b>تحريك اللوحة:</b> انقر واسحب للتجول في مساحة العمل • <b>نصيحة سريعة:</b> يمكنك الضغط مطولاً على زر المسافة (Space) أثناء استخدام أي أداة لتحريك اللوحة فوراً.',
   pen: '✒️ <b>أداة القلم (P):</b> انقر لوضع نقاط بزوايا حادة، أو <b>انقر واسحب الماوس</b> لإنشاء منحنيات ناعمة • انقر على نقطة البداية لإغلاق الشكل • اضغط <b>Enter</b> للإنهاء.',
@@ -722,6 +760,50 @@ function toast(msg) {
   toastT = setTimeout(() => toastEl.classList.remove('show'), duration);
 }
 
+function readImageBlob(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('تعذرت قراءة ملف الصورة'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function resolveImageSource(data) {
+  const suppliedMimeType = data?.mimeType || data?.type;
+  const mimeType = typeof suppliedMimeType === 'string' && suppliedMimeType.startsWith('image/')
+    ? suppliedMimeType
+    : 'image/png';
+  let image = data?.file || data?.blob || data?.image || data?.urlOrBase64 || data?.url || data?.dataUrl || data?.base64 || data;
+
+  if (image instanceof Blob) {
+    if (image.type && !image.type.startsWith('image/')) {
+      throw new Error('نوع الملف المرسل ليس صورة');
+    }
+    return readImageBlob(image);
+  }
+
+  if (image instanceof ArrayBuffer || ArrayBuffer.isView(image)) {
+    const bytes = image instanceof ArrayBuffer
+      ? new Uint8Array(image)
+      : new Uint8Array(image.buffer, image.byteOffset, image.byteLength);
+    return readImageBlob(new Blob([bytes], { type: mimeType }));
+  }
+
+  if (image && typeof image === 'object' && image.type === 'Buffer' && Array.isArray(image.data)) {
+    return readImageBlob(new Blob([new Uint8Array(image.data)], { type: mimeType }));
+  }
+
+  if (typeof image !== 'string' || !image.trim()) {
+    throw new Error('لم يتم إرسال بيانات صورة صالحة');
+  }
+
+  const source = image.trim();
+  if (/^(data:image\/|https?:\/\/|blob:|\/|\.\/|\.\.\/)/i.test(source)) return source;
+  if (/^[a-z\d+/]+={0,2}$/i.test(source)) return `data:${mimeType};base64,${source}`;
+  throw new Error('صيغة الصورة غير مدعومة؛ أرسل URL أو Data URL أو Blob');
+}
+
 /* ================= نظام التواصل الخارجي (window.postMessage API) ================= */
 function notifyParent(type, payload = {}) {
   const msg = { type, payload, timestamp: Date.now() };
@@ -758,8 +840,15 @@ window.addEventListener('message', async (event) => {
   switch (type) {
     case 'IMPORT_IMAGE':
     case 'VECTOR_STUDIO_IMPORT_IMAGE': {
-      const src = data?.urlOrBase64 || data?.url || data?.image;
-      if (src) insertRasterImageFromUrl(src);
+      try {
+        const src = await resolveImageSource(data);
+        const result = await insertRasterImageFromUrl(src);
+        notifyParent('VECTOR_STUDIO_IMAGE_IMPORTED', result);
+      } catch (err) {
+        console.error('Vector Studio image import failed:', err);
+        notifyParent('VECTOR_STUDIO_IMPORT_ERROR', { message: err.message });
+        toast('❌ تعذر استيراد الصورة من التطبيق الخارجي');
+      }
       break;
     }
 
@@ -968,6 +1057,16 @@ function getElemBBox(el) {
   };
 }
 
+function getSelectionBBox(elements = selectedItems) {
+  const boxes = elements.map(getElemBBox);
+  if (!boxes.length) return { x: 0, y: 0, w: 0, h: 0 };
+  const left = Math.min(...boxes.map(box => box.x));
+  const top = Math.min(...boxes.map(box => box.y));
+  const right = Math.max(...boxes.map(box => box.x + box.w));
+  const bottom = Math.max(...boxes.map(box => box.y + box.h));
+  return { x: left, y: top, w: right - left, h: bottom - top };
+}
+
 function moveElement(elm, dx, dy) {
   if (!dx && !dy) return;
   const tag = elm.tagName.toLowerCase();
@@ -1026,33 +1125,58 @@ function resizeElement(elm, bounds, corner, point, originalTransform) {
     `translate(${fmt(anchor.x)} ${fmt(anchor.y)}) scale(${fmt(scaleX)} ${fmt(scaleY)}) translate(${fmt(-anchor.x)} ${fmt(-anchor.y)})${originTransform}`);
 }
 
-function select(elm) {
+function resizeElements(elements, bounds, corner, point, originalTransforms) {
+  const corners = [
+    { x: bounds.x, y: bounds.y },
+    { x: bounds.x + bounds.w, y: bounds.y },
+    { x: bounds.x, y: bounds.y + bounds.h },
+    { x: bounds.x + bounds.w, y: bounds.y + bounds.h }
+  ];
+  const start = corners[corner], anchor = corners[3 - corner];
+  const minScaleX = 1 / Math.max(bounds.w, 1), minScaleY = 1 / Math.max(bounds.h, 1);
+  let scaleX = (point.x - anchor.x) / (start.x - anchor.x || 1);
+  let scaleY = (point.y - anchor.y) / (start.y - anchor.y || 1);
+  if (Math.abs(scaleX) < minScaleX) scaleX = (scaleX < 0 ? -1 : 1) * minScaleX;
+  if (Math.abs(scaleY) < minScaleY) scaleY = (scaleY < 0 ? -1 : 1) * minScaleY;
+  const scaleTransform = `translate(${fmt(anchor.x)} ${fmt(anchor.y)}) scale(${fmt(scaleX)} ${fmt(scaleY)}) translate(${fmt(-anchor.x)} ${fmt(-anchor.y)})`;
+  elements.forEach((elm, index) => {
+    const originalTransform = originalTransforms[index] || '';
+    elm.setAttribute('transform', `${scaleTransform}${originalTransform ? ` ${originalTransform}` : ''}`);
+  });
+}
+
+function setSelection(elements) {
   closeTextEditor(false);
-  selected = elm;
+  selectedItems = [...new Set(elements)].filter(elm => elm && elm.parentElement === artwork);
+  selected = selectedItems[selectedItems.length - 1] || null;
   editing = null;
-  if (state.tool === 'direct' && isPath(elm)) {
-    startEdit(elm);
-  }
+  if (selectedItems.length === 1 && state.tool === 'direct' && isPath(selected)) startEdit(selected);
   renderOverlay();
   renderProps();
   renderLayers();
 }
 
+function select(elm) {
+  setSelection(elm ? [elm] : []);
+}
+
 function deselect() {
-  closeTextEditor(false);
-  selected = null;
-  editing = null;
-  renderOverlay();
-  renderProps();
-  renderLayers();
+  setSelection([]);
+}
+
+function toggleSelection(elm) {
+  const next = selectedItems.includes(elm)
+    ? selectedItems.filter(item => item !== elm)
+    : [...selectedItems, elm];
+  setSelection(next);
 }
 
 function renderOverlay() {
   if (editing) { renderPathEditor(); return; }
   overlay.innerHTML = '';
-  if (!selected) return;
+  if (!selectedItems.length) return;
   let bb;
-  try { bb = getElemBBox(selected); } catch (e) { return; }
+  try { bb = getSelectionBBox(); } catch (e) { return; }
   const u = 1 / state.zoom;
   overlay.appendChild(el('rect', {
     x: bb.x, y: bb.y,
@@ -1073,43 +1197,61 @@ function renderOverlay() {
 
 /* ================= إدراج صورة نقطية عادية (بدون فكتور) ================= */
 function insertRasterImageFromUrl(src) {
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    let w = img.naturalWidth || 240;
-    let h = img.naturalHeight || 240;
-    const maxDim = Math.min(ART_W, ART_H) * 0.75;
-    if (w > maxDim || h > maxDim) {
-      const sc = maxDim / Math.max(w, h);
-      w = Math.round(w * sc);
-      h = Math.round(h * sc);
-    }
-    const x = Math.round((ART_W - w) / 2);
-    const y = Math.round((ART_H - h) / 2);
+  return new Promise((resolve, reject) => {
+    let retriedWithoutCors = false;
+    const externalUrl = /^https?:\/\//i.test(src) && new URL(src, window.location.href).origin !== window.location.origin;
+    const load = useCors => {
+      const img = new Image();
+      if (externalUrl && useCors) img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        let w = img.naturalWidth || 240;
+        let h = img.naturalHeight || 240;
+        const maxDim = Math.min(ART_W, ART_H) * 0.75;
+        if (w > maxDim || h > maxDim) {
+          const sc = maxDim / Math.max(w, h);
+          w = Math.round(w * sc);
+          h = Math.round(h * sc);
+        }
+        const x = Math.round((ART_W - w) / 2);
+        const y = Math.round((ART_H - h) / 2);
 
-    const imageEl = el('image', {
-      href: src,
-      x: x,
-      y: y,
-      width: w,
-      height: h,
-      preserveAspectRatio: 'xMidYMid meet',
-      opacity: state.opacity
-    });
-    artwork.appendChild(imageEl);
-    select(imageEl);
-    pushHist();
-    renderLayers();
-    toast('🖼️ تم إدراج الصورة كطبقة عادية باللوحة');
-  };
-  img.onerror = () => toast('❌ تعذر تحميل الصورة');
-  img.src = src;
+        const imageEl = el('image', {
+          href: src,
+          x: x,
+          y: y,
+          width: w,
+          height: h,
+          preserveAspectRatio: 'xMidYMid meet',
+          opacity: state.opacity
+        });
+        artwork.appendChild(imageEl);
+        select(imageEl);
+        pushHist();
+        renderLayers();
+        toast('🖼️ تم إدراج الصورة كطبقة عادية باللوحة');
+        resolve({ width: img.naturalWidth, height: img.naturalHeight, corsEnabled: !externalUrl || useCors });
+      };
+      img.onerror = () => {
+        if (externalUrl && useCors && !retriedWithoutCors) {
+          retriedWithoutCors = true;
+          load(false);
+          return;
+        }
+        reject(new Error('تعذر تحميل الصورة؛ تحقق من الرابط ونوع الملف'));
+      };
+      img.src = src;
+    };
+    load(true);
+  });
 }
 
 function insertRasterImage(file) {
-  const reader = new FileReader();
-  reader.onload = () => insertRasterImageFromUrl(reader.result);
-  reader.readAsDataURL(file);
+  readImageBlob(file)
+    .then(insertRasterImageFromUrl)
+    .catch(err => {
+      console.error('Vector Studio image insert failed:', err);
+      toast('❌ تعذر تحميل الصورة');
+    });
 }
 
 $('#btnInsertImg').onclick = () => $('#fileInsertImgDirect').click();
@@ -1727,6 +1869,19 @@ function commitEdit() {
   scheduleCodeUpdate();
 }
 
+function setSelectionStyle(attribute, value) {
+  selectedItems.flatMap(getStyleTargets).forEach(elm => elm.setAttribute(attribute, value));
+}
+
+function resizeSelectionTo(bounds, width, height) {
+  const scaleX = width / Math.max(bounds.w, 1), scaleY = height / Math.max(bounds.h, 1);
+  const transform = `translate(${fmt(bounds.x)} ${fmt(bounds.y)}) scale(${fmt(scaleX)} ${fmt(scaleY)}) translate(${fmt(-bounds.x)} ${fmt(-bounds.y)})`;
+  selectedItems.forEach(elm => {
+    const original = elm.getAttribute('transform') || '';
+    elm.setAttribute('transform', `${transform}${original ? ` ${original}` : ''}`);
+  });
+}
+
 function editHit(p) {
   const ed = editing;
   if (!ed) return null;
@@ -2069,12 +2224,40 @@ function convertToPath(shape) {
 function ungroupElement(g) {
   if (!g || g.tagName.toLowerCase() !== 'g') return;
   const children = [...g.children];
-  children.forEach(c => artwork.insertBefore(c, g));
+  const groupTransform = g.getAttribute('transform') || '';
+  const groupOpacity = Number(g.getAttribute('opacity'));
+  const inheritedAttributes = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity', 'color', 'visibility'];
+  children.forEach(c => {
+    if (groupTransform) {
+      const childTransform = c.getAttribute('transform') || '';
+      c.setAttribute('transform', `${groupTransform}${childTransform ? ` ${childTransform}` : ''}`);
+    }
+    inheritedAttributes.forEach(attribute => {
+      if (!c.hasAttribute(attribute) && g.hasAttribute(attribute)) c.setAttribute(attribute, g.getAttribute(attribute));
+    });
+    if (Number.isFinite(groupOpacity) && g.hasAttribute('opacity')) {
+      const childOpacity = Number(c.getAttribute('opacity') || 1);
+      c.setAttribute('opacity', fmt(groupOpacity * childOpacity));
+    }
+    artwork.insertBefore(c, g);
+  });
   g.remove();
-  if (children.length) select(children[0]); else deselect();
+  if (children.length) setSelection(children); else deselect();
   pushHist();
   renderLayers();
   toast('🧩 تم فك التجميع إلى مسارات منفصلة');
+}
+
+function groupSelection() {
+  const elements = selectedItems.filter(elm => elm.parentElement === artwork);
+  if (elements.length < 2) return;
+  const ordered = [...artwork.children].filter(elm => elements.includes(elm));
+  const group = el('g', { 'data-name': 'مجموعة عناصر' });
+  artwork.insertBefore(group, ordered[0]);
+  ordered.forEach(elm => group.appendChild(elm));
+  select(group);
+  pushHist();
+  toast(`✅ تم تجميع ${ordered.length} عناصر في طبقة واحدة`);
 }
 
 /* ================= لوحة الخصائص ================= */
@@ -2087,44 +2270,49 @@ function toHex(c) {
 }
 
 function renderProps() {
-  const has = !!selected;
+  const has = selectedItems.length > 0;
   $('#propEmpty').classList.toggle('hidden', has);
   $('#propElement').classList.toggle('hidden', !has);
   if (!has) return;
 
   const S = selected, tg = S.tagName.toLowerCase();
-  $('#propType').textContent = layerName(S);
+  const multi = selectedItems.length > 1;
+  $('#propType').textContent = multi ? `${selectedItems.length} عناصر محددة` : layerName(S);
 
-  $('#ungroupSec').classList.toggle('hidden', tg !== 'g');
+  $('#ungroupSec').classList.toggle('hidden', multi || tg !== 'g');
+  $('#groupSec').classList.toggle('hidden', !multi);
   $('#convertPathSec').classList.toggle('hidden', !['rect', 'ellipse', 'line'].includes(tg));
-  $('#colorPropsSec').classList.toggle('hidden', tg === 'image');
-  $('#imageActionsSec').classList.toggle('hidden', tg !== 'image');
+  $('#colorPropsSec').classList.toggle('hidden', tg === 'image' && !multi);
+  $('#imageActionsSec').classList.toggle('hidden', tg !== 'image' || multi);
 
   let bb = { x: 0, y: 0, w: 0, h: 0 };
-  try { bb = getElemBBox(S); } catch (e) {}
+  try { bb = getSelectionBBox(); } catch (e) {}
   $('#propX').value = Math.round(bb.x);
   $('#propY').value = Math.round(bb.y);
   $('#propW').value = Math.round(bb.w);
   $('#propH').value = Math.round(bb.h);
 
-  const canWH = (tg === 'rect' || tg === 'ellipse' || tg === 'image');
+  const canWH = multi || tg === 'g' || tg === 'rect' || tg === 'ellipse' || tg === 'image';
   $('#propW').disabled = !canWH;
   $('#propH').disabled = !canWH;
 
-  const f = S.getAttribute('fill'), fNone = !f || f === 'none';
+  const styleTargets = selectedItems.flatMap(getStyleTargets);
+  const styleSource = styleTargets[0] || S;
+  const f = styleSource.getAttribute('fill'), fNone = !f || f === 'none';
   $('#propFillNone').checked = fNone;
   $('#propFill').value = fNone ? '#000000' : toHex(f);
-  $('#propFillOp').value = String(S.getAttribute('fill-opacity') ?? 1);
+  $('#propFillOp').value = String(styleSource.getAttribute('fill-opacity') ?? 1);
 
-  const st = S.getAttribute('stroke'), stNone = !st || st === 'none';
+  const st = styleSource.getAttribute('stroke'), stNone = !st || st === 'none';
   $('#propStrokeNone').checked = stNone;
   $('#propStroke').value = stNone ? '#000000' : toHex(st);
-  $('#propStrokeW').value = S.getAttribute('stroke-width') ?? state.strokeWidth;
-  $('#propStrokeOp').value = String(S.getAttribute('stroke-opacity') ?? 1);
+  $('#propStrokeW').value = styleSource.getAttribute('stroke-width') ?? state.strokeWidth;
+  $('#propStrokeOp').value = String(styleSource.getAttribute('stroke-opacity') ?? 1);
   $('#propOpacity').value = String(S.getAttribute('opacity') ?? 1);
 
-  $('#propTextSec').classList.toggle('hidden', tg !== 'text');
-  if (tg === 'text') {
+  const singleText = !multi && tg === 'text';
+  $('#propTextSec').classList.toggle('hidden', !singleText);
+  if (singleText) {
     $('#propTextContent').value = [...S.querySelectorAll('tspan')].map(s => s.textContent).join('\n') || S.textContent || '';
     $('#propFontSize').value = S.getAttribute('font-size') ?? state.fontSize;
     $('#propFontWeight').value = S.getAttribute('font-weight') || '400';
@@ -2140,6 +2328,12 @@ function renderProps() {
     $('#anchorPointControls').classList.toggle('hidden', editing.sel < 0);
     $('#btnToggleClose').textContent = editing.closed ? '🔓 فتح المسار (Open)' : '🔒 إغلاق المسار (Close)';
   }
+}
+
+function getStyleTargets(element) {
+  if (element.tagName.toLowerCase() !== 'g') return [element];
+  const graphics = [...element.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon,text,image,use')];
+  return graphics.length ? graphics : [element];
 }
 
 function applyProp(t) {
@@ -2167,32 +2361,40 @@ function applyProp(t) {
   if (id === 'defFontSize') state.fontSize = Math.max(6, +v);
   if (id === 'defFontFamily') state.fontFamily = v;
 
-  if (!selected) return;
-  const S = selected, tg = S.tagName.toLowerCase();
+  if (!selectedItems.length) return;
+  const S = selected, tg = S.tagName.toLowerCase(), multi = selectedItems.length > 1;
 
   switch (id) {
     case 'propX': case 'propY': {
-      const bb = getElemBBox(S);
+      const bb = getSelectionBBox();
       const nx = +$('#propX').value || 0, ny = +$('#propY').value || 0;
-      moveElement(S, nx - bb.x, ny - bb.y);
+      selectedItems.forEach(elm => moveElement(elm, nx - bb.x, ny - bb.y));
       break;
     }
-    case 'propW':
-      if (tg === 'rect' || tg === 'image') S.setAttribute('width', Math.max(1, +v || 1));
-      if (tg === 'ellipse') S.setAttribute('rx', Math.max(1, (+v || 1) / 2));
+    case 'propW': {
+      if (multi || tg === 'g') {
+        const bb = getSelectionBBox(), width = Math.max(1, +v || 1);
+        resizeSelectionTo(bb, width, bb.h);
+      } else if (tg === 'rect' || tg === 'image') S.setAttribute('width', Math.max(1, +v || 1));
+      else if (tg === 'ellipse') S.setAttribute('rx', Math.max(1, (+v || 1) / 2));
       break;
-    case 'propH':
-      if (tg === 'rect' || tg === 'image') S.setAttribute('height', Math.max(1, +v || 1));
-      if (tg === 'ellipse') S.setAttribute('ry', Math.max(1, (+v || 1) / 2));
+    }
+    case 'propH': {
+      if (multi || tg === 'g') {
+        const bb = getSelectionBBox(), height = Math.max(1, +v || 1);
+        resizeSelectionTo(bb, bb.w, height);
+      } else if (tg === 'rect' || tg === 'image') S.setAttribute('height', Math.max(1, +v || 1));
+      else if (tg === 'ellipse') S.setAttribute('ry', Math.max(1, (+v || 1) / 2));
       break;
-    case 'propFill': S.setAttribute('fill', $('#propFillNone').checked ? 'none' : v); break;
-    case 'propFillNone': S.setAttribute('fill', v ? 'none' : $('#propFill').value); break;
-    case 'propFillOp': S.setAttribute('fill-opacity', v); break;
-    case 'propStroke': S.setAttribute('stroke', $('#propStrokeNone').checked ? 'none' : v); break;
-    case 'propStrokeNone': S.setAttribute('stroke', v ? 'none' : $('#propStroke').value); break;
-    case 'propStrokeW': S.setAttribute('stroke-width', Math.max(0, +v || 0)); break;
-    case 'propStrokeOp': S.setAttribute('stroke-opacity', v); break;
-    case 'propOpacity': S.setAttribute('opacity', v); break;
+    }
+    case 'propFill': setSelectionStyle('fill', $('#propFillNone').checked ? 'none' : v); break;
+    case 'propFillNone': setSelectionStyle('fill', v ? 'none' : $('#propFill').value); break;
+    case 'propFillOp': setSelectionStyle('fill-opacity', v); break;
+    case 'propStroke': setSelectionStyle('stroke', $('#propStrokeNone').checked ? 'none' : v); break;
+    case 'propStrokeNone': setSelectionStyle('stroke', v ? 'none' : $('#propStroke').value); break;
+    case 'propStrokeW': setSelectionStyle('stroke-width', Math.max(0, +v || 0)); break;
+    case 'propStrokeOp': setSelectionStyle('stroke-opacity', v); break;
+    case 'propOpacity': selectedItems.forEach(elm => elm.setAttribute('opacity', v)); break;
     case 'propTextContent': updateTextContent(S, t.value); break;
     case 'propFontSize': S.setAttribute('font-size', Math.max(6, +v)); break;
     case 'propFontFamily': S.setAttribute('font-family', v); break;
@@ -2207,7 +2409,14 @@ function applyProp(t) {
 $('#panelProps').addEventListener('input', e => applyProp(e.target));
 $('#panelProps').addEventListener('change', e => { applyProp(e.target); pushHist(); });
 
-$('#btnDel').onclick = () => { if (!selected) return; const s = selected; deselect(); s.remove(); pushHist(); };
+function deleteSelection() {
+  if (!selectedItems.length) return;
+  const elements = [...selectedItems];
+  deselect();
+  elements.forEach(elm => elm.remove());
+  pushHist();
+}
+$('#btnDel').onclick = deleteSelection;
 $('#btnDup').onclick = () => {
   if (!selected) return;
   const c = selected.cloneNode(true);
@@ -2218,6 +2427,8 @@ $('#btnDup').onclick = () => {
 $('#btnFwd').onclick = () => { if (selected) moveLayer(selected, 1); };
 $('#btnBwd').onclick = () => { if (selected) moveLayer(selected, -1); };
 $('#btnUngroup').onclick = () => { if (selected) ungroupElement(selected); };
+$('#btnGroup').onclick = groupSelection;
+$('#btnGroupLayers').onclick = groupSelection;
 $('#btnConvertToPath').onclick = () => { if (selected) convertToPath(selected); };
 
 $('#btnMakeSmooth').onclick = () => {
@@ -2254,7 +2465,7 @@ $('#btnToggleClose').onclick = () => {
 /* ================= لوحة الطبقات ================= */
 function layerName(e) {
   const t = e.tagName.toLowerCase();
-  if (t === 'g') return '🧩 مجموعة فيكتور (Traced Group)';
+  if (t === 'g') return `🧩 مجموعة عناصر (${e.children.length})`;
   if (t === 'path') return '📈 مسار فيكتور (Path)';
   if (t === 'rect') return '🟥 مستطيل (Rectangle)';
   if (t === 'ellipse') return '🟢 دائرة / بيضاوي (Ellipse)';
@@ -2278,13 +2489,15 @@ function moveLayer(elm, dir) {
 function renderLayers() {
   const box = $('#layersList'); box.innerHTML = '';
   const items = [...artwork.children];
+  $('#btnGroupLayers').disabled = selectedItems.length < 2;
   if (!items.length) {
     box.innerHTML = '<div class="text-xs text-muted p-4 text-center leading-relaxed">لا توجد طبقات بعد.<br>اختر أداة من الشريط الأيسر أو أدرج صورة للبدء!</div>';
     return;
   }
   items.slice().reverse().forEach(elm => {
     const row = document.createElement('div');
-    row.className = 'layer-row' + (elm === selected ? ' active' : '');
+    row.className = 'layer-row' + (elm === selected ? ' active' : '') +
+      (selectedItems.includes(elm) && elm !== selected ? ' multi-selected' : '');
 
     const mk = (html, title, fn) => {
       const b = document.createElement('button');
@@ -2310,11 +2523,15 @@ function renderLayers() {
     mk('↑', 'تقديم للأعلى', () => moveLayer(elm, 1));
     mk('↓', 'تأخير للأسفل', () => moveLayer(elm, -1));
     mk('✕', 'حذف الطبقة', () => {
-      if (selected === elm) deselect();
+      if (selectedItems.includes(elm)) setSelection(selectedItems.filter(item => item !== elm));
       elm.remove(); pushHist();
     });
 
-    row.onclick = () => {
+    row.onclick = e => {
+      if (e.shiftKey) {
+        toggleSelection(elm);
+        return;
+      }
       select(elm);
       switchRightTab('props');
     };
@@ -2836,13 +3053,13 @@ viewport.addEventListener('pointerdown', e => {
   e.preventDefault();
 
   const resizeHandle = e.target.closest?.('[data-resize-handle]');
-  if (state.tool === 'select' && selected && resizeHandle) {
+  if (state.tool === 'select' && selectedItems.length && resizeHandle) {
     drag = {
-      kind: 'resize-el',
-      elm: selected,
+      kind: 'resize-selection',
+      elms: [...selectedItems],
       corner: Number(resizeHandle.getAttribute('data-resize-handle')),
-      startBounds: getElemBBox(selected),
-      originalTransform: selected.getAttribute('transform') || ''
+      startBounds: getSelectionBBox(),
+      originalTransforms: selectedItems.map(elm => elm.getAttribute('transform') || '')
     };
     dragging = true;
     viewport.setPointerCapture(e.pointerId);
@@ -2855,8 +3072,12 @@ viewport.addEventListener('pointerdown', e => {
   switch (state.tool) {
     case 'select':
       if (hit) {
-        select(hit);
-        drag = { kind: 'move-el', elm: hit, last: p };
+        if (e.shiftKey) {
+          toggleSelection(hit);
+        } else {
+          if (!selectedItems.includes(hit)) select(hit);
+          drag = { kind: 'move-selection', elms: [...selectedItems], last: p };
+        }
       } else {
         deselect();
       }
@@ -2950,14 +3171,14 @@ viewport.addEventListener('pointermove', e => {
       applyView();
       break;
 
-    case 'move-el':
-      moveElement(drag.elm, p.x - drag.last.x, p.y - drag.last.y);
+    case 'move-selection':
+      drag.elms.forEach(elm => moveElement(elm, p.x - drag.last.x, p.y - drag.last.y));
       drag.last = p;
       renderOverlay();
       break;
 
-    case 'resize-el':
-      resizeElement(drag.elm, drag.startBounds, drag.corner, p, drag.originalTransform);
+    case 'resize-selection':
+      resizeElements(drag.elms, drag.startBounds, drag.corner, p, drag.originalTransforms);
       renderOverlay();
       break;
 
@@ -3108,6 +3329,12 @@ document.addEventListener('keydown', e => {
     if (k === 'y') { e.preventDefault(); redo(); return; }
     if (k === 's') { e.preventDefault(); $('#btnSave').click(); return; }
     if (k === '0') { e.preventDefault(); fitView(); return; }
+    if (k === 'g') {
+      e.preventDefault();
+      if (e.shiftKey && selectedItems.length === 1 && selected.tagName.toLowerCase() === 'g') ungroupElement(selected);
+      else groupSelection();
+      return;
+    }
     if (k === 'Enter' && penActive) { finishPen(false); return; }
     return;
   }
@@ -3117,12 +3344,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Delete' || e.key === 'Backspace') {
     if (editing && editing.sel >= 0) {
       deleteAnchorAt(editing.sel);
-    } else if (selected) {
-      const s = selected;
-      deselect();
-      s.remove();
-      pushHist();
-    }
+    } else if (selectedItems.length) deleteSelection();
     e.preventDefault();
     return;
   }
